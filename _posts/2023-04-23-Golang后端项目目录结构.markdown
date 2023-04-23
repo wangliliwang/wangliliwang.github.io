@@ -1,0 +1,205 @@
+---
+layout: post
+title:  "Golang后端项目目录结构"
+date:   2023-04-23 21:11:49 +0800
+categories: Golang
+toc: true
+---
+
+## 适用范围
+适用范围：后端Golang项目。
+
+## 目录结构
+
+规范：
+1. 一套代码可对应多个应用。
+2. 一套代码会构建出来一个可执行文件，通过参数区分不同的应用，以节约docker仓库空间。
+3. 目录结构及说明详述如下：
+
+```
+.
+├── Dockerfile
+├── Makefile             // 常用命令聚合
+├── README.md
+├── bin                  // 构建结果，被.gitignore忽略，不会提交到代码仓库
+├── cmd                  // 项目服务入口
+├── go.mod
+├── go.sum
+├── internal             // 此目录下代码不能被其他项目导入
+│   ├── access              // 接入层
+│   │   ├── api                // 接入层 - Web API接入逻辑
+│   │   └── rpc                // 接入层 - RPC接入逻辑
+│   ├── biz                 // 服务层
+│   │   ├── aggr               // 服务聚合层
+│   │   └── service            // 服务核心层
+│   ├── conf                // 配置文件模型、解析逻辑
+│   └── data                // 数据层
+│       ├── dao                // 对db、cache的读取
+│       └── rpcrequest         // 对外部rpc的读取
+├── pkg                  // 此目录下代码可以被其他项目导入
+├── resource             // 资源
+│   ├── config              // 配置文件
+│   └── test                // 测试资源
+└── scripts              // 支撑性服务
+```
+
+### cmd/
+
+规范：
+1. 此目录为项目服务入口，负责程序的启动、关闭、配置初始化等。
+2. cmd/main.go 负责加载配置文件，启动pprof，以及db、cache等初始化操作。
+3. cmd的每个子目录，对应一个接入层应用，这里不放置太多复杂的逻辑，只作为项目启动的入口。
+
+### bin/
+
+规范：
+1. 此目录放置构建产物，被.gitignore忽略，不会提交到代码仓库
+
+### internal/
+
+规范：
+1. 此目录放置项目的核心逻辑代码
+2. 不希望被别的项目导入的代码，放在此目录
+
+#### 代码分层
+
+规范：
+1. 代码分为三层：
+   a. 接入层：作为服务提供方，与其他系统交互的渠道，这一层应尽量简单，不放入太复杂的逻辑。
+   b. 服务层：表达业务概念、业务状态信息、业务规则，分为服务核心层和服务聚合层。服务核心层是比较稳定的服务模块，服务聚合层聚合了多个服务核心模块的逻辑。
+   c. 数据层：获取外部数据
+2. 层级调用规则：
+   a. 上层可以调用下层，下层不可以调用上层
+   b. 不能跨层调用（例外：接入层可以跨过服务聚合层，调用服务核心层的逻辑）
+   c. 不能同层调用（例外：服务聚合层可以调用服务核心层的逻辑，服务聚合层之间也可以相互调用）
+
+![](/assets/20230423-golang/arch.png)
+
+#### access/ 接入层
+
+规范：
+1. 负责维护参数解析、参数校验、组装响应、实例化服务实例等逻辑
+2. 每个接入层服务使用一个单独的子文件夹
+
+#### biz/ 服务层
+
+规范：
+1. 服务核心层（service/）是比较固定的服务模块
+2. 服务聚合层（aggr/）维护服务核心层不同模块的融合逻辑
+3. 使用interface实现依赖倒置
+4. 每个服务模块，需要维护如下文件：
+   a. [domain].go，维护服务层模型和接口。接口的命名规则：“[domain]Service”
+   b. impl/ 接口的实现及单元测试，包括具体实现，和工厂函数。实现的命名规则：“[domain]ServiceImpl”
+   c. mock/ 接口的mock实现，gomock根据接口定义自动生成代码，包括具体实现，和工厂函数
+
+#### data/ 数据层
+
+规范：
+1. 对db、cache的读取逻辑应放入dao/中；
+2. 对其他外部数据源的调用，都放入意义明确的目录下，例如：对外部项目rpc的调用放在rpcrequest/目录下
+3. 各模块都需要使用interface实现“依赖倒置”
+
+account.go示例如下（包括interface、物理模型）：
+```go
+type AccountInfo struct {
+    Name string
+}
+
+type AccountDAO interface {
+    GetAccountInfo(ctx context.Context, id string) (*AccountInfo, error)
+}
+```
+
+impl/account.go示例如下：
+```go
+type accountImpl struct {
+    mysqlPool *gorm.DB
+}
+
+func (a *accountImpl) GetAccountInfo(ctx context.Context, id string) (*dao.AccountInfo, error) {
+    panic("impl me")
+}
+
+func NewAccountDAO() dao.AccountDAO {
+    return &accountImpl{}
+}
+```
+
+#### conf/ 配置解析
+
+规范：
+1. 维护配置模型、配置初始化逻辑
+
+#### consts/ 常量
+
+规范：
+1. 维护常量
+
+### pkg/
+
+规范：
+1. 可以在其他项目中导入的代码，应放在这个目录中。
+2. 内部子目录规范同 internal/ 。
+
+### resource/
+
+规范：
+1. 维护项目依赖的资源文件
+
+#### config/
+规范：
+1. 维护项目配置文件
+2. 对于每一个代码运行环境（如本地环境、开发环境、测试环境、生产环境等）都应该设置一个单独的配置文件。
+
+#### test/
+
+规范：
+1. 维护测试数据
+
+### scripts/
+
+规范：
+1. 维护项目补充性脚本
+
+### Makefile
+
+规范：
+1. 维护常用命令，比如构建可执行文件、运行lint、运行mock等，示例如下：
+
+```makefile
+.PHONY: all lint fix test mock-fetch mock
+
+all:
+    go build -o bin/main cmd/main.go
+
+lint:
+    golangci-lint run ./cmd/...
+    golangci-lint run ./pkg/...
+
+fix:
+    golangci-lint run --fix ./cmd/...
+    golangci-lint run --fix ./internal/...
+
+test:
+    go test -v -coverprofile=coverage.out ./internal/...
+
+mock-fetch:
+    go get github.com/golang/mock/gomock
+    go get github.com/golang/mock/mockgen
+
+mock: mock-fetch
+    mkdir -p internal/biz/service/mock
+    mkdir -p internal/data/dao/mock
+    mockgen -source=internal/biz/service/account.go -package=mock -destination=internal/biz/service/mock/account.go
+```
+
+### 其他 Dockerfile,.golangci.yml,README.md,.gitignore
+
+规范：
+1. 其他项目文件按照实际作用命名
+
+## 参考
+
+1. [project-layout](https://github.com/golang-standards/project-layout)
+2. [Golang微服务简洁架构实战](https://cloud.tencent.com/developer/article/1953855)
+3. [应用架构的最佳实践](https://blog.csdn.net/significantfrank/article/details/110934799)
