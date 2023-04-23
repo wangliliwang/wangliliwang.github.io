@@ -31,7 +31,16 @@ github_username:  wangliliwang
 # Build settings
 theme: minima
 plugins:
+  - jekyll-toc
   - jekyll-feed
+
+toc:
+  min_level: 1
+  max_level: 4
+
+feed:
+  categories:
+    - Software-Architecture
 
 # Exclude from processing.
 # The following items will not be processed, by default.

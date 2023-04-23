@@ -18,3 +18,29 @@
 ## 常用命令
 
 1. 本地启动服务 `bundle exec jekyll serve`
+
+## todo(wangli)
+
+1. DONE 目录
+2. DONE 图片 https://jekyllrb.com/docs/posts/#including-images-and-resources
+3. ssh
+4. DONE 审核内容
+5. feed
+
+目录
+```shell
+1. 添加 gem jekyll-toc  https://github.com/toshimaru/jekyll-toc
+2. 添加 _config.yml: plugin, toc
+3. 添加 post: toc: true
+4. 
+```
+
+layout
+```shell
+1. jekyll https://jekyllrb.com/docs/layouts/
+2. 覆盖默认theme的layout `https://jekyllrb.com/docs/themes/`
+  a. bundle info --path minima
+```
+
+1. 学习官方文档
+2. 
