@@ -46,4 +46,11 @@ layout
 
 theme
 1. https://github.com/jeffreytse/jekyll-theme-yat/ 用起来还不错，啥都有
-2. 
+2. https://streamelody.github.io/tags/ 这个不错，可以炒一炒 impl
+3. http://jekyllthemes.org/
+4. https://github.com/mzlogin/mzlogin.github.io
+5. http://huangxuan.me/
+6. https://github.com/kitian616/jekyll-TeXt-theme 评论 搜索 等
+7. https://www.chen9.info/ 一个装逼的
+8. top60 https://1px.run/jekyll/theme/
+
