@@ -43,4 +43,7 @@ layout
 ```
 
 1. 学习官方文档
+
+theme
+1. https://github.com/jeffreytse/jekyll-theme-yat/ 用起来还不错，啥都有
 2. 

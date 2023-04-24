@@ -29,7 +29,7 @@ url: https://wangliliwang.github.io # the base hostname & protocol for your site
 github_username:  wangliliwang
 
 # Build settings
-theme: minima
+theme: jekyll-theme-yat
 plugins:
   - jekyll-toc
   - jekyll-feed
