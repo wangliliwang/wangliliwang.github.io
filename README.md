@@ -54,3 +54,9 @@ theme
 7. https://www.chen9.info/ 一个装逼的
 8. top60 https://1px.run/jekyll/theme/
 
+我的主题需求：
+1. 代码高亮好看
+2. 日夜模式
+3. 文章格式好看
+4. 标签汇总、分类汇总
+5. 搜索
