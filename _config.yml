@@ -29,10 +29,16 @@ url: https://wangliliwang.github.io # the base hostname & protocol for your site
 github_username:  wangliliwang
 
 # Build settings
-remote_theme: jeffreytse/jekyll-theme-yat
+remote_theme: riggraz/no-style-please
 plugins:
   - jekyll-toc
   - jekyll-feed
+
+theme_config:
+  appearance: "auto" # can be "light", "dark" or "auto"
+  back_home_text: ".." # customize text for homepage link in post layout
+  date_format: "%Y-%m-%d" # customize how date is formatted
+  show_description: false # show blog description in home page
 
 toc:
   min_level: 1
