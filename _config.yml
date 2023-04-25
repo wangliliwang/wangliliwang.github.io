@@ -30,6 +30,7 @@ github_username:  wangliliwang
 
 # Build settings
 theme: jekyll-theme-yat
+remote_theme: jeffreytse/jekyll-theme-yat
 plugins:
   - jekyll-toc
   - jekyll-feed
@@ -37,10 +38,6 @@ plugins:
 toc:
   min_level: 1
   max_level: 4
-
-feed:
-  categories:
-    - Software-Architecture
 
 # Exclude from processing.
 # The following items will not be processed, by default.

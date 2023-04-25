@@ -45,6 +45,7 @@ layout
 1. 学习官方文档
 
 theme
+1. 如何修改theme https://github.blog/2017-11-29-use-any-theme-with-github-pages/
 1. https://github.com/jeffreytse/jekyll-theme-yat/ 用起来还不错，啥都有
 2. https://streamelody.github.io/tags/ 这个不错，可以炒一炒 impl
 3. http://jekyllthemes.org/
