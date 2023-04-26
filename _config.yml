@@ -82,9 +82,10 @@ rawposts:
 # - about.md
 
 # Build settings
-theme: rawposts
+#theme: rawposts
+remote_theme: gangdong/jekyll-theme-rawposts
 
-#rawposts:
+  #rawposts:
 #  navigation:
 #    - title: My Work
 #      url: "/my-work"
