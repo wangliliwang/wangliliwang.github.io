@@ -113,4 +113,3 @@ plugins:
   - jekyll-toc
   - jekyll/tagging
   - jekyll-tagging-related_posts
-#  - jekyll-feed

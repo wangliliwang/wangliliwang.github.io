@@ -2,7 +2,7 @@
 layout: post
 title:  "Golang后端项目目录结构"
 date:   2023-04-23 21:11:49 +0800
-tags: ["Golang"]
+categories: ["Golang"]
 toc: true
 ---
 
