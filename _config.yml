@@ -1,5 +1,5 @@
-title: David Dong's Blog
-SEOTitle: Wangli's Blog | 王利的博客
+title: Wang Li's Blog
+SEOTitle: Wang Li's Blog | 王利的博客
 logo: '/assets/logo.png' 
 label: BLOG # this name will be displayed on the title name of homepage
 author: 王利
@@ -51,10 +51,10 @@ rawposts:
   share_media: true  # generate social share links in footer
   show_category_box: true    # display post categories box in the index page
   social_links:
-    wechat: 
-    github:  gangdong
-    linkedIn: daviddong
-    mail: daviddong
+#    wechat:
+    github:  wangliliwang
+#    linkedIn: daviddong
+#    mail: daviddong
     rss: rss
     # dribbble: jekyll
     # facebook: jekyll
