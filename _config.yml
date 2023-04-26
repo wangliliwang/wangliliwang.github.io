@@ -1,65 +1,115 @@
-# Welcome to Jekyll!
-#
-# This config file is meant for settings that affect your whole blog, values
-# which you are expected to set up once and rarely edit after that. If you find
-# yourself editing this file very often, consider using Jekyll's data files
-# feature for the data you need to update frequently.
-#
-# For technical reasons, this file is *NOT* reloaded automatically when you use
-# 'bundle exec jekyll serve'. If you change this file, please restart the server process.
-#
-# If you need help with YAML syntax, here are some quick references for you:
-# https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
-# https://learnxinyminutes.com/docs/yaml/
-#
-# Site settings
-# These are used to personalize your new site. If you look in the HTML files,
-# you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
-# You can create any custom variable you would like, and they will be accessible
-# in the templates via {{ site.myvariable }}.
+title: David Dong's Blog
+SEOTitle: Wangli's Blog | 王利的博客
+logo: '/assets/logo.png' 
+label: BLOG # this name will be displayed on the title name of homepage
+author: 王利
+#email: dqdongg@hotmail.com
+#description: "This is David Dong's blog. It's about program and design, life and sharing. Let's explore more together. | David，Software，Developer.Designer | 关于程序与设计 - 生活与分享 | 这里是董刚 的个人博客，让我们一起探索更多。"
+#keywords: "董刚, DavidDong, David, 董刚的博客, David Dong's Blog, 博客, 个人网站, 互联网, Web, 手机, 人机接口, Touch, Fingerprint，Github Pages TEE Java Python C Android"
+show_excerpts: true # set to true to show excerpts on the homepage
+url: https://wangliliwang.github.io
+baseurl: ''
+#repository: wangli/daviddong.github.io
+cdn_baseurl: ''
+# Minima date format
+# refer to http://shopify.github.io/liquid/filters/date/ if you want to customize this
+sass:
+  sass_dir: _sass
+# Pagination 
+paginate: 12
+paginate_path: "/blog/page:num/"
+rawposts:
+  name: Wang Li
+  tagline: Golang/Python
+  date_format: "%b %-d, %Y"
+  sitemap: true # set to true to generate sitemap.xml content
+  highlighter: rouge
+  syntax: monokai.sublime  # stylesheet, 
+                           # options: base16, base16.dark, base16.light, base16.monokai, 
+                           # base16.monokai.dark, base16.monokai.light, base16.solarized, base16.solarized.dark, base16.solarized.light, 
+                           # bw, colorful, github, gruvbox, gruvbox.dark, gruvbox.light, igorpro, magritte, molokai, monokai, monokai.sublime, 
+                           # pastie, thankful_eyes, tulip
+ # markdown: kramdown
+  search: true # set to true to enable searchbar
+  dark_mode: true # set to true to add dark mode toggle
+  condensed_mobile:
+    #- home
+    - page
+    - post
+    - extension
+    
+  reading_time: true  # set to true to add reading time statistics
+  archives: true  # set to true to generate archives page 
+  categories: true  # set to true to generate categories page
+  related_posts: true #  set to true to enable related posts
+  gittalk: true  # set to true to add gittalk 
+  navigation: true    # set to to add page navigation bar
+  show_statistics: true  #set to true to show statistics of site visitors number
+  rss: true  #set to true to add rss 
+  source_code: true  #set to true to add link to source code
+  analytics_id: G-3MXGF3F8QN  #use Google analytics
+  share_media: true  # generate social share links in footer
+  show_category_box: true    # display post categories box in the index page
+  social_links:
+    wechat: 
+    github:  gangdong
+    linkedIn: daviddong
+    mail: daviddong
+    rss: rss
+    # dribbble: jekyll
+    # facebook: jekyll
+    # flickr:   jekyll
+    # instagram: jekyll
+    # linkedin: jekyll
+    # pinterest: jekyll
+    # youtube: jekyll
+    # youtube_channel: UC8CXR0-3I70i1tfPg1PAE1g
+    # youtube_channel_name: CloudCannon
+    # telegram: jekyll
+    # googleplus: +jekyll
+    # microdotblog: jekyll
 
-title: Wangli's Programming Blog
-# email: baomi@baomi.com
-description: >- # this means to ignore newlines until "baseurl:"
-  My blog, another home.
-domain: wangliliwang.github.io
-baseurl: "" # the subpath of your site, e.g. /blog
-url: https://wangliliwang.github.io # the base hostname & protocol for your site, e.g. http://example.com
-# twitter_username: w
-github_username:  wangliliwang
+    # Mastodon instances
+    # mastodon:
+    # - username: jekyll
+    #   instance: example.com
+    # - username: jekyll2
+    #   instance: example.com
+
+# If you want to link only specific pages in your header, uncomment
+# this and add the path to the pages in order as they should show up
+#header_pages:
+# - about.md
 
 # Build settings
-remote_theme: riggraz/no-style-please
+theme: rawposts
+
+#rawposts:
+#  navigation:
+#    - title: My Work
+#      url: "/my-work"
+#    - title: Resume
+#      url: "/resume"
+#kramdown:
+#  input:          GFM
+#  syntax_highlighter: rouge
+#  syntax_highlighter_opts:
+#    line_numbers:  false
+#    line_number_start: 1
+#    default_lang: c
+#emoji:
+  # The emoji's image host url, 'https://github.githubassets.com' (default).
+  # The trailing can't end with '/', and it's can be setting to '' (empty string).
+  #src: 'https://github.githubassets.com'
+  
+  # The emoji's image path of above host url, '/images/icons/' (default).
+  # If it must start with '/' character, and it's can not be a empty string.
+  #path: '/images/icons/'
+  
 plugins:
+  - jekyll-seo-tag
+  - jemoji
   - jekyll-toc
-  - jekyll-feed
-
-theme_config:
-  appearance: "auto" # can be "light", "dark" or "auto"
-  back_home_text: ".." # customize text for homepage link in post layout
-  date_format: "%Y-%m-%d" # customize how date is formatted
-  show_description: false # show blog description in home page
-
-toc:
-  min_level: 1
-  max_level: 4
-
-# Exclude from processing.
-# The following items will not be processed, by default.
-# Any item listed under the `exclude:` key here will be automatically added to
-# the internal "default list".
-#
-# Excluded items can be processed by explicitly listing the directories or
-# their entries' file path in the `include:` list.
-#
-# exclude:
-#   - .sass-cache/
-#   - .jekyll-cache/
-#   - gemfiles/
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules/
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+  - jekyll/tagging
+  - jekyll-tagging-related_posts
+#  - jekyll-feed
