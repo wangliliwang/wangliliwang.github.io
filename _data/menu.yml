@@ -9,7 +9,7 @@ entries:
 #        url: https://github.com/riggraz/no-style-please
 #      - title: "used by <a href='https://riggraz.dev'>riggraz.dev</a> and <a href='https://github.com/riggraz/no-style-please/network/dependents'>many others</a>"
 
-  - title: all posts
+  - title: posts
     post_list:
       limit: 100
       show_more: true
@@ -26,10 +26,5 @@ entries:
 #  - title: rss
 #    url: feed.xml
 
-#  - title: another list
-#    entries:
-#      - title: with subitems
-#        entries:
-#          - title: with subsubitems
-#          - title: example page
-#            url: about
+  - title: about me
+    url: about
