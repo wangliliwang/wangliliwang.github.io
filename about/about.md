@@ -12,7 +12,7 @@ permalink: /about
   </li>
 
   <div class = "image-container">
-  <img src="/assets/image/about-bg.JPG" />
+  <img src="/assets/image/about-bg-2.JPG" />
   </div>
 
   {% include language-box.html %}

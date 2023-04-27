@@ -81,6 +81,17 @@ layout: default
 			{% endif %}
 		</div>
 		{% endif %}
+		{% if page.toc %}
+		<div class="sidebar-toc-box">
+			{% if page.language == 'chinese' %}
+			<p class = "sidebar-title">文章目录</p>
+			<span class = "sidebar-font-medium sidebar-toc-content">{% toc %}</span>
+			{% else %}
+			<p class = "sidebar-title">Table of Contents</p>
+			<span class = "sidebar-font-medium sidebar-toc-content">{% toc %}</span>
+			{% endif %}
+		</div>
+		{% endif %}
 	</div>
 	 {% endif %}
   </div>
