@@ -24,7 +24,7 @@ toc: true
 
 ##### <b>问题描述</b>
 
-![](/assets/20230423-solid/srp-1.png)
+![](/assets/image/20230423-solid/srp-1.png)
 
 某一个工资管理程序中有1个类Employee，包含了2个函数，对应的是2个不同的行为者：
 1. GetSalaryReport（获取薪资报表）由财务部门确定规则，负责向CFO汇报
@@ -43,7 +43,7 @@ GetSalaryReport和GetWorkReport都需要计算工作时长，程序员为了复�
 1. 对于CFO、COO团队，对应使用2个类实现各自的业务功能，各自计算工作时长
 2. 方案缺点：使用方需要处理2个类，而不是之前的一个，增加了使用成本
 
-![](/assets/20230423-solid/srp-2.png)
+![](/assets/image/20230423-solid/srp-2.png)
 
 #### <b>原则阐述</b>
 
@@ -71,7 +71,7 @@ GetSalaryReport和GetWorkReport都需要计算工作时长，程序员为了复�
 1. 实现新功能，只需要增加PrintPresenter, PDFView类，不需要修改旧代码。
 2. 依赖是单向的，且最终指向Interactor。也意味着Interactor是系统中最抽象的类，其他类的修改，都不会影响到它。
 
-![](/assets/20230423-solid/ocp-1.png)
+![](/assets/image/20230423-solid/ocp-1.png)
 
 #### 原则阐述
 
@@ -210,7 +210,7 @@ type File struct {
 2. 使用Device的时候，根据私有变量deviceType判断使用哪个device实例
 3. 增加设备时：需要修改DeviceService，增加一个DeviceXXX类
 
-![](/assets/20230423-solid/dip-1.png)
+![](/assets/image/20230423-solid/dip-1.png)
 
 ```go
 type DevicePhone struct {
@@ -254,7 +254,7 @@ func (d *DeviceService) Login() error {
 2. DevicePhone/DeviceTL5时Device的两个实现
 3. 增加设备时，只需要增加DeviceXXX类（实现Device）
 
-![](/assets/20230423-solid/dip-2.png)
+![](/assets/image/20230423-solid/dip-2.png)
 
 ```go
 type Device interface {
@@ -301,13 +301,13 @@ func (d *DeviceService) Login() error {
 1. 前置检查和业务代码写在一起，且前置检查放在一个函数里边
 2. 遇到的问题：业务代码迅速变得很臃肿，且修改前置检查代码会影响所有接口
 
-![](/assets/20230423-solid/srp-rc-1.png)
+![](/assets/image/20230423-solid/srp-rc-1.png)
 
 解决方案，使用职责链模式：
 1. 每项检查都独立实现为middleware，在框架层面集成，与业务代码解耦合
 2. 每个middleware只负责一个职责，所以符合SRP。
 
-![](/assets/20230423-solid/srp-rc-2.png)
+![](/assets/image/20230423-solid/srp-rc-2.png)
 
 
 ### 举例：OCP与适配器模式
@@ -317,15 +317,15 @@ func (d *DeviceService) Login() error {
 2. 不同的数据来源方数据格式不尽相同，分析函数库只支持JSON特定格式的数据。
 3. 修改分析函数库比较复杂，或者因为使用第三方服务根本无法修改，所以只能采用其他办法
 
-![](/assets/20230423-solid/ocp-a-1.png)
+![](/assets/image/20230423-solid/ocp-a-1.png)
 
 解决方案，使用适配器模式：
 1. 为每一种数据格式写一个适配器类，将数据转化为分析函数库可以使用的格式
 2. 新增数据格式时，由于不需要修改分析函数库，所以符合开闭原则
 3. 下图是更为抽象的适配器模式的描述
 
-![](/assets/20230423-solid/ocp-a-2.png)
-![](/assets/20230423-solid/ocp-a-3.png)
+![](/assets/image/20230423-solid/ocp-a-2.png)
+![](/assets/image/20230423-solid/ocp-a-3.png)
 
 ## 参考
 

@@ -7,6 +7,7 @@
 5. 目录
 6. about，删除了，还没定制
 7. 文章下面的Share. 这个和阅读量是关联在一起的.
+8. home页面计数器 busuanzi_value_site_uv
 
 ## 
 

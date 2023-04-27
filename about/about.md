@@ -7,16 +7,13 @@ permalink: /about
 {% include menu.html %}
 
 <div class ="post-container">
-<p>I, man.</p>
   <li class="posts-labelgroup" id="posts-labelgroup">
 	<h1 id="posts-label">{{page.title}}</h1>
   </li>
 
-<!--
   <div class = "image-container">
-  <img src="/assets/image/home-bg-o.jpg" />
+  <img src="/assets/image/about-bg.JPG" />
   </div>
--->
 
   {% include language-box.html %}
 
