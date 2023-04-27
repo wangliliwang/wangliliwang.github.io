@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 source "http://rubygems.org"
+
+gem "github-pages", "~> 228", group: :jekyll_plugins
+
 group :jekyll_plugins do
     gem 'jekyll-feed'
     gem 'jekyll-sitemap'
@@ -16,3 +19,5 @@ group :jekyll_plugins do
 	gem 'jekyll-tagging-related_posts'
 	gem 'jekyll-tagging'
 end
+
+gem "webrick", "~> 1.8"
