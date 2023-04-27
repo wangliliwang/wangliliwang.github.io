@@ -84,17 +84,23 @@ layout: default
 		{% if page.toc %}
 		<div class="sidebar-toc-box">
 			{% if page.language == 'chinese' %}
+
 			<p class = "sidebar-title">文章目录</p>
-			<span class = "sidebar-font-medium sidebar-toc-content">{% toc %}</span>
+			{% include toc.html html=content %}
+
 			{% else %}
+
 			<p class = "sidebar-title">Table of Contents</p>
-			<span class = "sidebar-font-medium sidebar-toc-content">{% toc %}</span>
+			{% include toc.html html=content %}
+
 			{% endif %}
+
 		</div>
 		{% endif %}
 	</div>
 	 {% endif %}
   </div>
+
   <!-- no sidebar, use flex width box! -->
   <br>
   <div class="post-container">

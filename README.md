@@ -4,7 +4,7 @@
 2. DONE 删除评论
 3. DONE 搜索
 4. DONE 弹出框 menu home 可用
-5. 目录
+5. DOING 目录 https://github.com/allejo/jekyll-toc 修改样式
 6. about，删除了，还没定制
 7. 文章下面的Share. 这个和阅读量是关联在一起的.
 8. home页面计数器 busuanzi_value_site_uv
@@ -13,3 +13,6 @@
 ## other
 
 1. 参考 https://github.com/gangdong/gangdong.github.io
+2. https://github.com/github/pages-gem
+3. gem whitelist https://github.com/github/pages-gem/blob/master/lib/github-pages/plugins.rb
+4. https://pages.github.com/
