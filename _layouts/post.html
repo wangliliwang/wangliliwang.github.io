@@ -45,7 +45,7 @@ layout: default
 				<p class = "sidebar-about-content sidebar-font-big">{{page.description}}</p>
 				{% endif %}
 				{% if page.author %}
-				<p class = "icon-link sidebar-about-content sidebar-font-medium" style = "margin-top:40px">文章作者: <a href="https://github.com/gangdong">{{page.author}}</a></p>
+				<p class = "icon-link sidebar-about-content sidebar-font-medium" style = "margin-top:40px">文章作者: <a href="https://github.com/wangliliwang">{{page.author}}</a></p>
 				{% endif %}
 				<p class = "icon-hourglass sidebar-about-content sidebar-font-medium">阅读时间：{{ time }} {%if time > 1 %}mins{% else %}min{% endif %}</p>
 				<p class = "icon-book sidebar-about-content sidebar-font-medium">全文字数：{{words}}</p>
@@ -64,7 +64,7 @@ layout: default
 					<P class = "sidebar-about-content sidebar-font-big">{{page.description}}</P>
 				{% endif %}
 				{% if page.author %}
-					<P class = "icon-link sidebar-about-content sidebar-font-medium" style = "margin-top:30px">Author: <a href="https://github.com/gangdong">{{page.author}}</a></P>
+					<P class = "icon-link sidebar-about-content sidebar-font-medium" style = "margin-top:30px">Author: <a href="https://github.com/wangliliwang">{{page.author}}</a></P>
 				{% endif %}
 					<P class = "icon-clock sidebar-about-content sidebar-font-medium">{{ time }} {%if time > 1 %}mins{% else %}min{% endif %} to read</P>
 					<P class = "icon-book-1 sidebar-about-content sidebar-font-medium">{{words}} words</P>
@@ -171,7 +171,6 @@ layout: default
   {%- endif -%}
   <br>
   <!-- comment box starts here! -->
-  {% include comments.html %}
 
   {%- if site.rawposts.gittalk -%}
   <div class = "footer">© 2012-2021 David Dong. All rights reserved.</div>

@@ -11,7 +11,7 @@
     {% if page == paginator.page %}
       <span class="pagination-box pagination-box-hit">{{ page }}</span>
     {% elsif page == 1 %}
-      <a class="pagination-box pagination-box-idle" href="{{ '/blog/index.html' | prepend: site.baseurl | replace: '//', '/' }}">{{ page }}</a>
+      <a class="pagination-box pagination-box-idle" href="{{ '/' | prepend: site.baseurl | replace: '//', '/' }}">{{ page }}</a>
     {% else %}
       <a class="pagination-box pagination-box-idle" href="{{ site.paginate_path | prepend: site.baseurl | replace: '//', '/' | replace: ':num', page }}">{{ page }}</a>
     {% endif %}
