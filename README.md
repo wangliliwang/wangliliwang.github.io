@@ -21,7 +21,6 @@
 2. https://github.com/github/pages-gem
 3. gem whitelist https://github.com/github/pages-gem/blob/master/lib/github-pages/plugins.rb
 4. https://pages.github.com/
+5. 数据结构设计参考 https://github.com/golang-collections/collections
 
 ## 文章计划
-
-

@@ -10,7 +10,7 @@ sidebar: true
 author: Wang Li
 ---
 
-<h2> SOLID设计原则 </h2>
+## SOLID设计原则
 
 本文介绍SOLID 5大设计原则，以及与设计模式的关系。
 
