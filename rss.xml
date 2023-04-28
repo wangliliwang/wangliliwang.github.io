@@ -5,7 +5,7 @@ layout: null
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>{{site.title}}</title>
-    <link>https://dqdongg.com/blog/index.html</link>
+    <link>https://wangliliwang.github.io</link>
     <atom:link href="https://wangliliwang.github.io/" rel="self" type="application/rss+xml" />
     <description>{{site.description}}</description>
     <language>en-us</language>
@@ -15,10 +15,10 @@ layout: null
     {% for post in site.posts %}
     <item>
       <title>{{ post.title }}</title>
-      <link>https://dqdongg.com{{ post.url }}</link>
+      <link>https://wangliliwang.github.io{{ post.url }}</link>
       <pubDate>{{ post.date | date: "%a, %d %b %Y %H:%M:%S %z" }}</pubDate>
       <author>{{site.author}}</author>
-      <guid>https://dqdongg.com{{ post.id }}</guid>
+      <guid>https://wangliliwang.github.io{{ post.id }}</guid>
       <description>{{ post.content | xml_escape }}</description>
     </item>
     {% endfor %}
