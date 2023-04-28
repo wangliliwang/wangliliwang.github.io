@@ -20,7 +20,7 @@ paginate: 12
 paginate_path: "/blog/page:num/"
 rawposts:
   name: Wang Li
-  tagline: Golang/Python
+  tagline: Coding/Photography/Writing
   date_format: "%b %-d, %Y"
   sitemap: true # set to true to generate sitemap.xml content
   highlighter: rouge
