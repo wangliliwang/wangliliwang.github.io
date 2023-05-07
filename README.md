@@ -69,12 +69,10 @@ https://huggingface.co/docs/hub/index
 运行：
 1. 本地启动服务 `bundle exec jekyll serve`
 
-
-2. font icon: 
-   a 参考 http://fontello.github.io/awesome-uni.font/demo.html
-   b 增加 fontello.svg
-   c 增加 _fonts.scss
-
 本地环境配置：
 1. `bundle install`
 
+font icon: 
+a 参考 http://fontello.github.io/awesome-uni.font/demo.html
+b 增加 fontello.svg 
+c 增加 _fonts.scss
