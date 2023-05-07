@@ -45,8 +45,8 @@ rawposts:
   gittalk: true  # set to true to add gittalk 
   navigation: true    # set to to add page navigation bar
   show_statistics: true  #set to true to show statistics of site visitors number
-  rss: true  #set to true to add rss 
-  source_code: true  #set to true to add link to source code
+  rss: false  #set to true to add rss
+  source_code: false  #set to true to add link to source code
   analytics_id: G-3MXGF3F8QN  #use Google analytics
   share_media: false  # generate social share links in footer
   show_category_box: true    # display post categories box in the index page
