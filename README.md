@@ -8,6 +8,8 @@
 6. about，删除了，还没定制
 7. DONE 网页计数器 https://busuanzi.ibruce.info/
 8. 静态资源 cdn
+9. 页面中嵌入golang执行环境
+10. hugging face svg https://huggingface.co/spaces/pierreant-p/huggingfab/blob/main/huggingface.svg
 
 注意：
 1. 跳转链接需要
@@ -37,11 +39,42 @@
 AI
 1. 论文解读，以及示例实现。两篇。
 
+### Hugging Face 备注 
+
+
+## 我感兴趣的
+
+1. 部署
+2. 模型是啥、原理
+3. 将我的huggingface添加到blog主页
+4. https://huggingface.co/spaces/liliong/ChuanHuGPT
+5. 考虑用space static托管我的文章，能否当做个人博客呢？
+6. 这里有个炫酷的3D静态站 https://huggingface.co/spaces/pierreant-p/huggingfab
+7. 使用docker能在本地跑起来几乎所有的spaces
+
+https://huggingface.co/docs/hub/index
+
+## 参考
+
+1. https://zhuanlan.zhihu.com/p/535100411
+2. 免费步数AcaGPT https://zhuanlan.zhihu.com/p/623676295
+3. hugging face blog https://huggingface.co/blog/zh
+4. 读一读 神经网络与深度学习
+5. AGI https://zhuanlan.zhihu.com/p/597586623
+6. 涌现 https://www.zhihu.com/question/587177332/answer/2921362654
+7. LLM资料 https://zhuanlan.zhihu.com/p/615471801
+
 ## 常用命令
 
+运行：
 1. 本地启动服务 `bundle exec jekyll serve`
+
 
 2. font icon: 
    a 参考 http://fontello.github.io/awesome-uni.font/demo.html
    b 增加 fontello.svg
    c 增加 _fonts.scss
+
+本地环境配置：
+1. `bundle install`
+
