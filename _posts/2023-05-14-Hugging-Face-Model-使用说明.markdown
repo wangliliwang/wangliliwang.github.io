@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "🤗 Hugging Face Model 使用说明"
-date:   2023-05-07 13:11:49 +0800
+date:   2023-05-14 14:11:49 +0800
 categories: AI
 tags: ["AI"]
 toc: true
@@ -10,15 +10,21 @@ sidebar: true
 author: Wang Li
 ---
 
-本文用于不了解transformer model的读者入门使用。
-主要内容用 transformers 这个 Python 包，说明 model 如何产生、使用，以及 Hugging Face model repo 中的文件。
+本文的主要内容用 `transformers` 这个 Python 包，说明 model 如何产生、使用，以及 Hugging Face model repo 中的文件。
+本文的 model 指的是 transformer 架构的 model，此类 model 通常用于 NLP 任务，如文本分类、文本生成等。
 
 ## Model 是什么？
 
 model 是一个可以处理输入数据的函数，输入数据可以是图片、文本、音频等，输出数据可以是分类、回归、文本生成等。
-model 的参数是在训练阶段学习到的，这些参数可以被保存，以便在推理（调用）阶段使用。
+model 的参数值是在训练阶段学习到的，这些参数可以被保存，以便在后续阶段使用。
 
-### 空白 model
+有证据表明，训练数据量越大、model 参数量越大，效果越好，所以现在最流行的 model 是 LLM（Large Language Model）。所以当前 model 的产生为两个阶段：
+1. pre-train：使用大量的数据，进行自监督训练。这样训练出来的 model，对特定任务帮助不大。但是可以在下一个阶段被 transfer 成特定任务的 model。 
+2. transfer：使用针对特定任务的数据（数据规模一般较 pre-train 阶段小得多）训练上一阶段产生的 model，这一阶段是监督训练。此阶段也称为 fine-tune。
+
+之所以分成两个阶段，而不是直接针对特定任务训练，正是因为上面的设计可以复用需要大量数据训练的 pre-train 阶段。
+
+### 使用空白 model
 
 空白的 model 只包含了模型的结构，参数是随机生成的，输出也是随机的，没有任何实际用途。
 
@@ -33,15 +39,31 @@ config = BertConfig()
 model = TFBertModel(config)
 ```
 
-### pretrained model
+### 使用非空白 model
 
-pretrained model 是在空白 model 上训练出来的，对于目前流行的 LLM，需要使用大量的训练新数据，消耗大量的算力、时间（数周以上）。
+使用 pre-trained model 以及 transferred model 的代码示例如下：
+```python
+from transformers import pipeline
 
-此阶段的训练
+classifier = pipeline("sentiment-analysis")
 
-## Model 处理流程
+# 后续就可以使用 classifier 处理任务了
+```
 
-下面是一个NLP Text Classification任务：
+从 model card 可以找到 model 的详细信息，包括类型。
+
+### 保存 model
+
+使用如下代码，可以将 model 保存到本地：
+```python
+model.save_pretrained("directory_on_my_computer")
+```
+
+此步骤会生成两个文件，架构描述 `config.json` 与 model 参数值，后者的文件名随模型类型变化。详情见"Model Repo 中都有什么"一节。 
+
+## 任务处理流程
+
+下面是一个 NLP Text Classification 任务：
 
 <script
 	type="module"
@@ -52,17 +74,17 @@ pretrained model 是在空白 model 上训练出来的，对于目前流行的 L
 
 我们的输入是一行文本（如："I love you."），输出是一个分类结果，包含了预测的类别（Positive/Negative）和概率。
 
-对于其他任务，虽然输入输出不同，但是处理流程是一样的。如下图：
-（处理流程图）
+对于其他任务，虽然输入输出不同，但是处理流程是一样的。
+![](/assets/image/20230514-huggingface-transformer/full_nlp_pipeline.svg)
 
 ### pre-processing
 
-因为 model 不能直接处理 text ，所以需要将文本转换成数字，这个过程叫做tokenize（pre-processing中只包含这一步），tokenize 的过程是由 tokenizer 完成的。主要做的事情如下：
-1. 将文本切分为word、subword、标点标点符号等，这些统称为 token
+因为 model 不能直接处理 text ，所以需要将文本转换成数字，这个过程叫做 tokenize（pre-processing中只包含这一步），tokenize 的过程是由 tokenizer 完成的。主要做的事情如下：
+1. 将文本切分为 word、subword、标点符号等，这些统称为 token
 2. 将 token 映射为数字
 3. 添加一些对模型有帮助的额外输入
 
-获取 text 的 token 的代码示例及输出如下：
+获取 text 的 token 的代码及输出示例：
 ```python
 from transformers import AutoTokenizer
 
@@ -92,13 +114,13 @@ print(inputs)
 # }
 ```
 
-### model forward
+### model-processing
 
-模型接受 tokens 作为输入，输出 hidden states（也称为 features），此结果需要经过 head 层，才能转化为分类及分数。
-model 的处理细节如下图：
-（todo 另一个处理图）
+model 接受 tokens 作为输入，输出 hidden states（也称为 features），此结果需要经过 head 层，才能转化为分类及分数。
+model 的处理细节如下：
+![](/assets/image/20230514-huggingface-transformer/transformer_and_head.svg)
 
-示例代码（model+head处理）如下：
+示例代码（model+head 处理）如下：
 ```python
 from transformers import TFAutoModelForSequenceClassification
 
@@ -108,7 +130,7 @@ model = TFAutoModelForSequenceClassification.from_pretrained(checkpoint)
 outputs = model(inputs)
 print(outputs.logits)
 
-# 输出如下（以第一个元素[-1.5606991,  1.6122842]为例，-1.5606991 表示类别，1.6122842 表示分数）：
+# 输出如下（以第一个元素[-1.5606991,  1.6122842]为例，-1.5606991 是类别1的分数，1.6122842 是类别2的分数）
 # <tf.Tensor: shape=(2, 2), dtype=float32, numpy=
 #     array([[-1.5606991,  1.6122842],
 #            [ 4.169231 , -3.3464472]], dtype=float32)>
@@ -116,26 +138,26 @@ print(outputs.logits)
 
 ### post-processing
 
-model 产生的结果，并不能被直接用来展示给用户，还需要经过一层处理，示例代码如下：
+model 产生的结果，用户并不能直接处理，还需要经过一层处理，示例代码如下：
 ```python
 import tensorflow as tf
 
 predictions = tf.math.softmax(outputs.logits, axis=-1)
 print(predictions)
 
-# 输出如下（以第一个元素[0.04019517, 0.95980483]为例，0.04019517 表示类别，0.95980483 表示概率）：
+# 输出如下（以第一个元素[0.04019517, 0.95980483]为例，0.04019517 是类别1的概率，0.95980483 是类别2的概率）
 # tf.Tensor(
 # [[4.01951671e-02 9.59804833e-01]
 # [9.9945587e-01 5.4418424e-04]], shape=(2, 2), dtype=float32)
 ```
 
-类别的 label 存储在 model repo 的 `configs.json` 的 `id2label` 字段中，示例代码模型此字段的值为 `{0: 'NEGATIVE', 1: 'POSITIVE'}`，所以最终输出为：
-1. 第一个句子: NEGATIVE: 0.0402, POSITIVE: 0.9598
-2. 第二个句子: NEGATIVE: 0.9995, POSITIVE: 0.0005
+model label 存储在 model repo 的 `config.json` 的 `id2label` 字段中，示例代码模型此字段的值为 `{0: 'NEGATIVE', 1: 'POSITIVE'}`，所以最终输出为：
+1. 第一个句子: `NEGATIVE: 0.0402, POSITIVE: 0.9598`
+2. 第二个句子: `NEGATIVE: 0.9995, POSITIVE: 0.0005`
 
 ### 使用 pipeline
 
-transformers 的 `pipeline` 方法，可以将上面三个步骤聚合起来，更方面使用模型，使用示例如下：
+transformers 的 `pipeline` 方法，可以将上面三个步骤聚合起来，更方面用户使用，示例如下：
 ```python
 from transformers import pipeline
 
@@ -156,6 +178,11 @@ pipeline 传入的参数是任务类型，细节可以自行查阅文档。
 
 ## Model Repo 中都有什么
 
+model 中主要包含三类文件：
+1. `config.json`: model 的架构配置，比如 model 的层数、hidden size、dropout 等
+2. `pytorch_model.bin` / `tf_model.h5` 等: model 的权重，也就是 model 的参数值。不同的框架生成的文件不同。
+3. `README.md`: model 的介绍，包括 model 的训练数据、训练参数、训练结果等，model card 是根据此文件生成的
+
 ## 参考
 
-1. [Hugging Face Docs](https://huggingface.co/docs)
+1. [Hugging Face NLP Course](https://huggingface.co/learn/nlp-course/chapter0/1?fw=pt)
