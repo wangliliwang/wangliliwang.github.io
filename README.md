@@ -52,6 +52,9 @@ AI
 6. 这里有个炫酷的3D静态站 https://huggingface.co/spaces/pierreant-p/huggingfab
 7. 使用docker能在本地跑起来几乎所有的spaces
 
+电影
++ 关于电影题材
+
 https://huggingface.co/docs/hub/index
 
 ## 参考
