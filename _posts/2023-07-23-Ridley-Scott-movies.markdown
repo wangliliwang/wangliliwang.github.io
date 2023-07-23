@@ -1,9 +1,9 @@
 ---
 layout: post
 title:  "Ridley Scott的电影"
-date:   2023-07-22 20:41:49 +0800
-categories: 随笔
-tags: ["随笔"]
+date:   2023-07-23 09:33:49 +0800
+categories: 电影
+tags: ["电影"]
 toc: false
 language: chinese
 sidebar: true
