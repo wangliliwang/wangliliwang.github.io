@@ -50,6 +50,8 @@ John Hinckley Jr.尝试给Jodie Foster写信表达自己的迷恋，这当然没
 <img class="middle-image" src="/assets/image/20230723-martin/1985-after-hours.png" />
 
 1988年*The Last Temptation of Christ*是对基督教历史的重新阐释，Martin因此而受到死亡威胁，之后几年Martin公开露面时一直带着保镖。
+这部电影于1983年开始拍摄，当时的公司是Paramount，拍摄到一半由于预算膨胀和宗教团体抗议而停止，之后Martin继续拍摄*After Hours*。1986年环球影城对这个项目产生了兴趣，愿意投钱继续拍完，
+开出的其中一个条件是Martin同意拍摄一步主流电影，也就是之后的*Cape Fear*。而*Cape Fear*这个项目当时在Spielberg手上，Spielberg用它向Martin交换了*Schindler's List*这部电影。
 
 <img class="middle-image" src="/assets/image/20230723-martin/1988-the-last-temptation-of-christ.png" />
 
