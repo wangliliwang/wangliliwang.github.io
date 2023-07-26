@@ -55,7 +55,7 @@ Ridley的第三部作品，是1982年的*Blade Runner*，科幻动作片类型�
 <img class="middle-image" src="/assets/image/20230723-ridley/1.webp" />
 <img class="middle-image" src="/assets/image/20230723-ridley/2.webp" />
 <img class="middle-image" src="/assets/image/20230723-ridley/3.webp" />
-<img class="middle-image" src="/assets/image/20230723-ridley/4.png" />
+<img class="middle-image" src="/assets/image/20230723-ridley/4.jpg" />
 
 1991年的*Thelma & Louise*，是一部公路片，讲述了两位对平凡生活感到厌倦的女性开车旅行的冒险故事，同时也是一部反抗男性、反抗男权社会的电影。
 这一部也是Brad Pitt的成名作。
