@@ -2,7 +2,7 @@
 layout: post
 title:  "🤗 Hugging Face Model 使用说明"
 date:   2023-05-14 14:11:49 +0800
-categories: AI
+categories: Computer-Science
 tags: ["AI"]
 toc: true
 language: chinese

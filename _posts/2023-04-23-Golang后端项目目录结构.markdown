@@ -2,7 +2,7 @@
 layout: post
 title:  "Golang后端项目目录结构"
 date:   2023-04-23 21:11:49 +0800
-categories: ["Golang"]
+categories: ["Computer-Science"]
 tags: ["Golang", "Directory Structure"]
 toc: true
 language: chinese

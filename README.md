@@ -39,6 +39,8 @@
 AI
 1. 论文解读，以及示例实现。两篇。
 
+matplotlib 如何画常见的图。
+
 ### Hugging Face 备注 
 
 

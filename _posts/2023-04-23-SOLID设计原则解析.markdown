@@ -2,7 +2,7 @@
 layout: post
 title:  "SOLID设计原则解析"
 date:   2023-04-23 17:43:49 +0800
-categories: Software-Architecture
+categories: Computer-Science
 tags: ["Software Architecture", "Design Principle"]
 toc: true
 language: chinese

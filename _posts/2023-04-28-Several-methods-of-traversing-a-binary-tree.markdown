@@ -2,7 +2,7 @@
 layout: post
 title:  "Several methods of traversing a binary tree"
 date:   2023-04-28 12:33:49 +0800
-categories: Algorithm
+categories: Computer-Science
 tags: ["Algorithm", "Golang", "Binary Tree"]
 toc: true
 language: english

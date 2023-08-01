@@ -2,7 +2,7 @@
 layout: post
 title:  "🤗 Hugging Face 简明教程"
 date:   2023-05-07 13:11:49 +0800
-categories: AI
+categories: Computer-Science
 tags: ["AI"]
 toc: true
 language: chinese
