@@ -14,7 +14,7 @@ author: Wang Li
 
 由于笔者自己最近在开发一款localcache，所以文中会使用此cache和另一款知名localcache跑一些示例数据，两个localcache为：
 1. [ristretto](https://github.com/dgraph-io/ristretto)
-2. [fastlocalcache-v1](https://github.com/wangliliwang/fastlocalcache/tree/v1)
+2. [fastlocalcache@v0.0.1](https://github.com/wangliliwang/fastlocalcache/tree/v0.0.1)
 
 ## 数据集
 
@@ -106,6 +106,17 @@ hitRatio := float64(hitCount) / float64(hitCount + missCount)
 ## 工具
 
 本文用到的工具，可以在 `https://github.com/dgraph-io/benchmarks/tree/master/cachebench/ristretto` 找到。
+
+说明：
+1. 编译后运行
+```text
+./main -suite    [ all | speed | hits ] 
+       -cache    [ all | ristretto ]
+       -parallel [ 1... ]
+       -path     [ output_file.csv ]
+```
+
+2. 如何接入指定的cache库？在`cache.go`中实现`Cache`接口，并对程序入口做一些改动。
 
 ## 参考
 
