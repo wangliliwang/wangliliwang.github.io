@@ -1,0 +1,70 @@
+---
+layout: post
+title:  "Golang的GC机制与性能影响"
+date:   2023-08-02 21:05:33 +0800
+categories: "Computer-Science"
+tags: ["Computer-Science", "Golang", "GC"]
+toc: true
+language: chinese
+sidebar: true
+author: Wang Li
+---
+
+垃圾回收（Garbage Collector）作为内存管理体系的一部分，在程序的生命周期中的发挥重大作用。如果没有GC，程序使用的内存会不断膨胀直至OOM。
+
+考察整个Golang程序的生命周期：
+1. compile time：全局变量会被分配在xx区域；对于其他对象，Compiler会做逃逸分析（escape analysis），简单来说，compile time不知道大小的，或者短生命周期的对象会逃逸到heap上；其他对象会被分配在stack上，这部分内存由compiler负责回收，无需GC参与。
+2. runtime：golang使用tcmalloc算法进行heap上的动态内存分配，并由GC进行自动内存回收。
+
+(todo 虚拟内存空间的图)
+
+（todo allocator - collector 的图）
+
+本篇文章我们关注GC机制、过程以及对性能的影响。
+
+
+## GC机制
+
+### GC分类
+
+GC首先被分为两大类：
+1. 手动GC。C、C++、Rust属于此类。在C中，使用malloc分类内存，使用free释放内存。
+2. 自动GC。编程语言的runtime在合适的时机执行GC，编程人员无需关心GC。
+
+自动GC根据实现原理分为两大类：
+1. 引用计数法。此类编程语言会为每个对象维护一个计数器，对象被引用时，计数器+1；引用失效时，计数器-1；计数器归零时，回收该对象。
+使用此类GC的编程语言有：Python、Objective-C、PHP等。
+
+此方法的优点：
+- 原理和实现都比较简单
+- 回收的即时性。引用计数器归零时立即回收，不像其他GC方法一样需要等待合适的时机执行GC。
+- 不需要暂停应用（Stop The World）即可完成回收
+
+缺点是：
+- 无法解决循环引用的回收问题。对象A、B互相引用，那么计数器都不是0，永远不能被回收。
+- 时间和空间成本较高。一方面是需要额外存储计数器；另一方面是修改在stack上赋值时的计数器增加了时间成本（todo 存疑）
+- 引用计数是一种摊销算法，会将内存的回收分摊到整个程序的运行过程，但是当销毁一个很大的树形结构时无法保证响应时间
+
+2. 追踪法。
+
+
+
+GC分类。
+GC的目标。
+GC的原理。
+GC触发时机。
+
+## 如何感知GC
+
+## 如何避免GC对性能的损耗
+
+## 一些实验
+
+## 参考
+
+1. [后端Golang部分](https://docs.qq.com/doc/DY0pqSGpQWWJhZFRn)
+2. [A Guide to the Go Garbage Collector](https://go.dev/doc/gc-guide)
+3. [Further Dangers of Large Heaps in Go](https://syslog.ravelin.com/further-dangers-of-large-heaps-in-go-7a267b57d487)
+4. [Golang 5分钟理解GC内存回收](https://juejin.cn/post/7052966096583786510)
+5. [图示Golang垃圾回收机制](https://zhuanlan.zhihu.com/p/297177002)
+6. [垃圾收集器](https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-garbage-collector/)
