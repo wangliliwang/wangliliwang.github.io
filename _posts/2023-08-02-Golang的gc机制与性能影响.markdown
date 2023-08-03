@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Golang的GC机制与性能影响"
+title:  "Golang的GC机制与对性能的影响"
 date:   2023-08-02 21:05:33 +0800
 categories: "Computer-Science"
 tags: ["Computer-Science", "Golang", "GC"]
@@ -10,7 +10,7 @@ sidebar: true
 author: Wang Li
 ---
 
-垃圾回收（Garbage Collector）作为内存管理体系的一部分，在程序的生命周期中的发挥重大作用。如果没有GC，程序使用的内存会不断膨胀直至OOM。
+垃圾回收（Garbage Collector）作为内存管理体系的一部分，在程序的生命周期中的发挥重大作用。如果没有GC，程序中不再被引用的对象就造成了内存泄漏，更严重的，会随着内存用量不断膨胀而OOM。
 
 考察整个Golang程序的生命周期：
 1. compile time：全局变量会被分配在xx区域；对于其他对象，Compiler会做逃逸分析（escape analysis），简单来说，compile time不知道大小的，或者短生命周期的对象会逃逸到heap上；其他对象会被分配在stack上，这部分内存由compiler负责回收，无需GC参与。
@@ -22,10 +22,15 @@ author: Wang Li
 
 本篇文章我们关注GC机制、过程以及对性能的影响。
 
-
 ## GC机制
 
-### GC分类
+### 目标
+
+1. 避免内存泄漏
+2. 自动回收，方便程序员使用
+3. 避免过多内存碎片
+
+### 原理
 
 GC首先被分为两大类：
 1. 手动GC。C、C++、Rust属于此类。在C中，使用malloc分类内存，使用free释放内存。
@@ -33,32 +38,92 @@ GC首先被分为两大类：
 
 自动GC根据实现原理分为两大类：
 1. 引用计数法。此类编程语言会为每个对象维护一个计数器，对象被引用时，计数器+1；引用失效时，计数器-1；计数器归零时，回收该对象。
-使用此类GC的编程语言有：Python、Objective-C、PHP等。
+使用此类GC的编程语言有：Python、Objective-C、PHP等。优点是实现简单、实时回收；缺点是计数器需要占据额外的空间，且有互相引用导致不能回收的问题。
+2. 追踪法。通过分析标记出可达对象，剩下的不可达对象就是应该清除的垃圾对象。优点是解决了循环引用不会被清理的问题，且占用空间更少；缺点是不是即时的，且需要STW。
 
-此方法的优点：
-- 原理和实现都比较简单
-- 回收的即时性。引用计数器归零时立即回收，不像其他GC方法一样需要等待合适的时机执行GC。
-- 不需要暂停应用（Stop The World）即可完成回收
+追踪法有若干种实现方式：
+1. 标记-清除法（Mark-Sweep）。标记阶段会标记出来需要清除的垃圾对象；清除阶段回收垃圾对象的内存空间。优点是效率高；缺点是会造成大量内存碎片。
 
-缺点是：
-- 无法解决循环引用的回收问题。对象A、B互相引用，那么计数器都不是0，永远不能被回收。
-- 时间和空间成本较高。一方面是需要额外存储计数器；另一方面是修改在stack上赋值时的计数器增加了时间成本（todo 存疑）
-- 引用计数是一种摊销算法，会将内存的回收分摊到整个程序的运行过程，但是当销毁一个很大的树形结构时无法保证响应时间
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mark-sweep.webp" />
 
-2. 追踪法。
+2. 标记-复制法（Mark-Copy）。将内存分为相同的两块，一块内存用完后，就将标记的非垃圾对象复制到另一块中。优点是解决了内存碎片问题；缺点是内存利用率太低，且有复制对象的开销。
 
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mark-copy.webp" />
 
+3. 标记-整理法（Mark-Compact）。整理阶段会将标记的非垃圾对象的内存排列在一起，然后释放掉其他内存。优点是避免了内存碎片问题，且内存利用率较高；缺点是整理过程较复杂，且需要多次STW。
 
-GC分类。
-GC的目标。
-GC的原理。
-GC触发时机。
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mark-compact.webp" />
+
+上述标记过程都不可避免地STW（Stop The World，暂停用户程序逻辑），因为标记阶段也会发生对象引用关系变化。Golang使用三色标记法（Tri-color Marking）这种改进版标记算法，使STW尽可能地短。
+在这种算法中，GC线程将所有对象分为三类：
+1. 白色。未扫描的对象。标记开始时，所有的对象都是白色；标记结束时，所有的白色对象都是垃圾对象。
+2. 灰色。正在扫描的对象。
+3. 黑色。当扫描完对象的多有引用时，将对象标记未黑色。标记结束时，所有的黑色对象都是可达对象，也就是依然在使用的对象。
+
+标记步骤如下：
+1. 初始时所有的对象都是白色
+2. 将GC root对象（对Golang来说是栈对象、全局变量、寄存器对象）标记为灰色，放入待处理队列
+3. 从待处理队列取出一个灰色对象，标记为黑色，并将它引用的所有白色指针对象（避免重复处理）标记为灰色，放入待处理队列中
+4. 重复步骤3，直到队列中没有对象
+5. 剩下的白色对象就是垃圾对象
+
+三色标记法GC线程一般是和用户线程一起运行的。算法优点是，不需要或者需要很短的STW时间；缺点是当垃圾对象的产生速度大于回收速度时，会导致垃圾对象越来越多。
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/tri-color-marking.webp" />
+
+### 触发时机
+
+`test()`函数会检查是否执行满足执行GC的条件。下面的场景会调用`test()`检查并决定是否执行GC：
+1. `runtime.sysmon`和`runtime.forcegchelper`后台运行定时检查和垃圾收集，此时`t.kind=gcTriggerTime`。
+2. `runtime.GC`用户程序手动触发垃圾收集，此时`t.kind=gcTriggerCycle`。这个函数在运行时，会阻塞调用方，直到GC完成。
+3. `runtime.mallocgc`申请内存时根据堆大小触发垃圾收集，此时`t.kind=gcTriggerHeap`
+
+```golang
+func (t gcTrigger) test() bool {
+	/*
+	    前提条件：
+        1. 允许垃圾回收
+        2. 程序没有panic
+        3. 当前没有在GC
+	 */
+	if !memstats.enablegc || panicking.Load() != 0 || gcphase != _GCoff {
+		return false
+	}
+	switch t.kind {
+	case gcTriggerHeap:
+		trigger, _ := gcController.trigger()
+		return gcController.heapLive.Load() >= trigger
+	case gcTriggerTime:
+		if gcController.gcPercent.Load() < 0 {
+			return false
+		}
+		lastgc := int64(atomic.Load64(&memstats.last_gc_nanotime))  // 一定时间内（默认2min）没有触发GC，则触发
+		return lastgc != 0 && t.now-lastgc > forcegcperiod
+	case gcTriggerCycle: 
+		return int32(t.n-work.cycles.Load()) > 0
+	}
+	return true
+}
+```
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/gc-trigger.png" />
 
 ## 如何感知GC
+
+
 
 ## 如何避免GC对性能的损耗
 
 ## 一些实验
+
+## more things
+
+1. 内存管理
+2. 逃逸分析
+2. GC root
+3. 写屏障技术
+
+为什么只关注引用类型？大量struct、int，占用的内存如何被回收呢？
 
 ## 参考
 
