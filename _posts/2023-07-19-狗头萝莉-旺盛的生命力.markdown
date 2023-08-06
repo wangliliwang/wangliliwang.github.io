@@ -2,7 +2,7 @@
 layout: post
 title:  "狗头萝莉 - 旺盛的生命力"
 date:   2023-07-19 14:11:49 +0800
-categories: 时事评论
+categories: 随笔
 tags: ["时事评论"]
 toc: false
 language: chinese
