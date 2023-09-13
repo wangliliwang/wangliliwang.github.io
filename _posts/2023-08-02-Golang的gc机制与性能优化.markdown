@@ -1,0 +1,273 @@
+---
+layout: post
+title:  "Golang的GC机制与性能优化"
+date:   2023-08-02 21:05:33 +0800
+categories: "Computer-Science"
+tags: ["Computer-Science", "Golang", "GC"]
+toc: true
+language: chinese
+sidebar: true
+author: Wang Li
+---
+
+垃圾回收（Garbage Collector）作为内存管理体系的一部分，在程序的生命周期中的发挥重大作用。如果没有GC，不再使用的对象会造成内存泄漏，甚至OOM。
+
+考察整个Golang程序的生命周期：
+1. compile time（编译期）：编译器进行逃逸分析（escape analysis），决定为对象分配的内存位置，一般来说，编译期计算不出内存大小的、或长生命周期的对象会逃逸到堆上；其他对象会被分配到栈上，栈内存由编译器负责回收，无需GC参与。
+2. runtime（运行时）：Golang使用TCMalloc（Thread-Caching Malloc）算法在堆上进行动态内存分配，并由GC进行自动内存回收。
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mutator-allocator-collector.png" />
+
+本文中笔者主要说明常见GC及原理、Golang GC过程、GC的感知、性能优化建议。
+
+## GC机制
+
+### 目标
+
+1. 避免内存泄漏
+2. 自动回收，方便开发者使用
+3. 控制内存碎片
+
+### 原理
+
+两大类GC：
+1. 手动GC。开发者需要在代码中手动调用内存回收函数。C、C++、Rust属于此类。如：在C中，使用`malloc`分配内存，使用`free`释放内存。
+2. 自动GC。编程语言的运行时逻辑在合适的时机执行GC，开发者无需太多关注GC。Python、Golang属于此类。
+
+自动GC根据实现原理分为两大类：
+1. 引用计数法。程序为每个对象维护一个计数器，对象被引用时，计数器+1；引用失效时，计数器-1；计数器归零时，回收该对象。
+使用此类GC的编程语言有：Python、Objective-C、PHP等。优点是实现简单、实时回收；缺点是计数器需要占据额外的空间，对象之间的互相引用会导致不能回收对象。
+2. 追踪法。通过分析标记出可达对象，剩下的不可达对象就是需要清除的垃圾对象。优点是解决了循环引用不会被清理的问题，且占用空间更少；缺点是不是即时的，且需要STW（Stop The World，暂停执行用户逻辑）。
+
+追踪法有若干种实现方式：
+
+1 标记-清除法（Mark-Sweep）。标记阶段标记需要清除的垃圾对象；清除阶段回收垃圾对象的内存空间。优点是效率高；缺点是会造成大量内存碎片。
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mark-sweep.webp" />
+
+2 标记-复制法（Mark-Copy）。将内存分为相同的两块，一块内存用完后，将标记的非垃圾对象复制到另一块中。优点是解决了内存碎片问题；缺点是内存利用率太低，且有复制对象的开销。
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mark-copy.webp" />
+
+3 标记-整理法（Mark-Compact）。整理阶段会将标记的非垃圾对象的内存排列在一起，然后释放掉其他内存。优点是避免了内存碎片问题，且内存利用率较高；缺点是整理过程较复杂，且需要多次STW。
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/mark-compact.webp" />
+
+上述标记过程都不可避免地STW，因为标记阶段也会发生对象引用关系变化。
+
+Golang使用三色标记法（Tri-color Marking）这种改进版标记算法，配合写屏障等内存技术，尽可能缩短了STW时间。
+在这种算法中，GC线程将所有对象分为三类：
+1. 白色。未扫描的对象。标记开始时，所有的对象都是白色；标记结束时，所有的白色对象都是垃圾对象。
+2. 灰色。正在扫描的对象。
+3. 黑色。当扫描完对象的所有引用时，将对象标记为黑色。标记结束时，所有的黑色对象都是可达对象，也就是依然在使用的对象。
+
+标记步骤如下：
+1. 初始时所有的对象都是白色
+2. 将GC root对象（栈对象、全局变量、寄存器对象）标记为灰色，放入待处理队列
+3. 从待处理队列取出一个灰色对象，标记为黑色，并将它引用的所有白色指针对象（避免重复处理）标记为灰色，放入待处理队列中
+4. 重复步骤3，直到队列中没有对象
+5. 剩下的白色对象就是垃圾对象
+
+三色标记法GC逻辑是和用户逻辑并行运行的。此算法优点是，STW时间很短；缺点是当垃圾对象的产生速度大于回收速度时，会导致垃圾对象越来越多，进而导致内存泄漏。
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/tri-color-marking.webp" />
+
+### 触发时机
+
+`runtime`包的`gcTrigger.test()`函数会检查各类GC触发条件是否满足。下面的场景会调用`test()`：
+1. `runtime.sysmon`和`runtime.forcegchelper`定时触发，此时`t.kind=gcTriggerTime`。
+2. `runtime.GC`用户程序手动触发，此时`t.kind=gcTriggerCycle`。这个函数在运行时，会阻塞调用方，直到GC完成。
+3. `runtime.mallocgc`申请内存时触发，此时`t.kind=gcTriggerHeap`
+
+```golang
+func (t gcTrigger) test() bool {
+	/*
+	    前提条件：
+        1. 允许垃圾回收
+        2. 程序没有panic
+        3. 当前没有在GC
+	 */
+	if !memstats.enablegc || panicking.Load() != 0 || gcphase != _GCoff {
+		return false
+	}
+	switch t.kind {
+	case gcTriggerHeap:
+		trigger, _ := gcController.trigger()
+		return gcController.heapLive.Load() >= trigger
+	case gcTriggerTime:
+		if gcController.gcPercent.Load() < 0 {
+			return false
+		}
+		lastgc := int64(atomic.Load64(&memstats.last_gc_nanotime))  // 一定时间内（默认2min）没有触发GC，则触发
+		return lastgc != 0 && t.now-lastgc > forcegcperiod
+	case gcTriggerCycle: 
+		return int32(t.n-work.cycles.Load()) > 0
+	}
+	return true
+}
+```
+
+<img class="middle-image" src="/assets/image/20230802-golang-gc/gc-trigger.png" />
+
+### Golang的GC如何实现GC目标？
+
+对于“避免内存泄漏”这个目标：GC可以有效回收内存，防止内存泄漏。
+
+对于“自动回收”这个目标：GC有分配堆内存时自动触发、定时触发等自动触发机制。
+
+对于”控制内存碎片“这个目标，Golang使用的TCMalloc内存分配算法，通过以下方式可以将内存碎片控制在较低水平（12.5%以内）：
+1. 将需要的内存向上取整到一个更合理的值，而不是2的幂，以此减少内部碎片
+2. 以page为单位向系统申请内存，以此减少外部碎片
+
+## 感知GC
+
+使用以下方法可以获取GC相关信息。
+
+### 方法1: GODEBUG=gctrace=1
+
+启动Golang程序的时候，设置参数`GODEBUG=gctrace=1 go run main.go`，这样可以在Stdout中输出GC的信息。
+
+示例代码：
+
+```go
+package main
+
+import (
+	"runtime"
+)
+
+func main() {
+	a := make(map[string]string, 1e9)
+	for i := 0; i < 10; i++ {
+		runtime.GC()
+	}
+	runtime.KeepAlive(a)
+}
+```
+
+输出的信息示例：
+
+```text
+gc 1 @0.877s 23%: 0.011+10227+0.011 ms clock, 0.092+5.8/20451/61335+0.091 ms cpu, 73984->73984->73984 MB, 73984 MB goal, 0 MB stacks, 0 MB globals, 8 P
+gc 2 @11.114s 24%: 0.010+14273+0.029 ms clock, 0.084+0/28546/85610+0.23 ms cpu, 73984->73984->73984 MB, 147968 MB goal, 0 MB stacks, 0 MB globals, 8 P (forced)
+```
+
+格式说明详见[golang runtime](https://pkg.go.dev/runtime)
+
+### 方法2: go tool trace
+
+`go tool trace`可以将统计信息以可视化的方式展示给用户。
+
+第一步：搜集信息。示例代码：
+
+```go
+package main
+
+import (
+	"os"
+	"runtime"
+	"runtime/trace"
+)
+
+func main() {
+	f, _ := os.Create("trace.out")
+	defer f.Close()
+	startErr := trace.Start(f)
+	if startErr != nil {
+		panic(startErr)
+	}
+	defer trace.Stop()
+
+	a := make(map[string]string, 1e9)
+	for i := 0; i < 3; i++ {
+		runtime.GC()
+	}
+	runtime.KeepAlive(a)
+}
+```
+
+第二步：启动工具，查看信息
+
+执行`go tool trace trace.out`，根据提示访问`http://127.0.0.1:58556`，可以看到如下信息：
+
+![](/assets/image/20230802-golang-gc/trace.png)
+
+### 方法3: runtime.ReadMemStats
+
+使用`runtime.ReadMemStats`获取内存相关统计信息。示例如下：
+```go
+package main
+
+import (
+	"fmt"
+	"runtime"
+)
+
+func main() {
+	a := make(map[string]string, 1e9)
+	for i := 0; i < 3; i++ {
+		runtime.GC()
+	}
+	runtime.KeepAlive(a)
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Printf("memory = %vKB, GC Times = %vn", m.Alloc/1024, m.NumGC)
+}
+```
+
+输出信息如下：
+```text
+memory = 75759731KB, GC Times = 4n
+```
+
+### 方法4: debug.ReadGCStats
+
+使用`debug.ReadGCStats`获取包括GC相关统计信息。示例如下：
+```go
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"runtime/debug"
+)
+
+func main() {
+	a := make(map[string]string, 1e9)
+	for i := 0; i < 3; i++ {
+		runtime.GC()
+	}
+	runtime.KeepAlive(a)
+
+	s := debug.GCStats{}
+	debug.ReadGCStats(&s)
+	fmt.Printf("gc %d last@%v, PauseTotal %v\n", s.NumGC, s.LastGC, s.PauseTotal)
+}
+```
+
+输出信息如下:
+
+```text
+gc 4 last@2023-09-13 20:48:00.231597 +0800 CST, PauseTotal 121.623µs
+```
+
+## GC相关性能优化
+
+纵观Golang对象的生命周期、内存分配、GC原理，优化性能可以从以下方面入手：
+1. 尽量避免在堆上分配内存。使用内存分析、逃逸分析等手段可以定位到优化对象。
+2. 非必要不使用指针对象。此手段可以减少扫描、标记阶段的GC压力。
+
+## 结语
+
+本文所述内容为简略概论，如果需要深入了解，可以查看“参考”中的文章。
+
+## 参考
+
+1. [A Guide to the Go Garbage Collector](https://go.dev/doc/gc-guide)
+2. [golang runtime package](https://pkg.go.dev/runtime)
+3. [图示Golang垃圾回收机制](https://zhuanlan.zhihu.com/p/297177002)
+4. [垃圾收集器](https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-garbage-collector/)
+5. [Further Dangers of Large Heaps in Go](https://syslog.ravelin.com/further-dangers-of-large-heaps-in-go-7a267b57d487)
+6. [Go语言中观察GC的几种方式](https://juejin.cn/post/6904280087668097038)
+7. [如何打造高性能的 Go 缓存库](https://www.luozhiyun.com/archives/531)
