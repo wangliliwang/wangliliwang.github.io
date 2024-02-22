@@ -3,9 +3,9 @@ layout: post
 title:  "简介排序算法"
 date:   2024-02-22 12:33:49 +0800
 categories: Computer-Science
-tags: ["Algorithm", "Golang", "Binary Tree"]
+tags: ["Algorithm", "Golang", "Sort"]
 toc: true
-language: english
+language: chinese
 sidebar: true
 author: Wang Li
 ---
@@ -14,15 +14,13 @@ author: Wang Li
 
 ## 排序算法的性质
 
-todo(wangli) 核对
-
-| 算法             | 适用场合             | 平均时间复杂度             | 最坏时间复杂度  | 空间复杂度                 | 是否稳定 | 是否是原地排序 |
-|----------------|------------------|---------------------|----------|-----------------------|------|---------|
-| insertion sort | 通用               | `O(N^2)`            | `O(N^2)` | `O(1)`                | 是    | 是       |
-| quick sort     | 通用               | `O(NLogN)`          |    `O(N^2)`      | `O(LogN)`             | 否    | 是       |
-| heap sort      | 通用               | `O(NLogN)`          |     `O(N^2)`     | `O(1)`                | 否    | 是         |
-| counting sort  | 适用于元素分布情况很大      | `O(N+M)` 其中M为元素取值跨度 |    `O(N+M)`     | `O(M + N)`  | 是    |    是     |
-| bucket sort    | 元素取值范围不大且分布均匀的情况 | `O(N)`              | `O(N^2)` | `O(N)`                |   是    |    是     |
+| 算法             | 适用场合               | 平均时间复杂度             | 最坏时间复杂度    | 空间复杂度     | 是否稳定 | 是否是原地排序 |
+|----------------|--------------------|---------------------|------------|-----------|------|---------|
+| insertion sort | 通用                 | `O(N^2)`            | `O(N^2)`   | `O(1)`    | 是    | 是       |
+| quick sort     | 通用                 | `O(NLogN)`          | `O(N^2)`   | `O(LogN)` | 否    | 是       |
+| heap sort      | 通用                 | `O(NLogN)`          | `O(NLogN)` | `O(1)`    | 否    | 是       |
+| counting sort  | 元素分布长度和N是一个数量级或小于N | `O(N+K)` 其中K为元素取值跨度 | `O(N+K)`   | `O(N+K)`  | 是    | 否       |
+| bucket sort    | 元素分布均匀的情况   | `O(N)`              | `O(N^2)`   | `O(N)`    |   是    | 否       |
 
 ## 基于比较的算法
 
@@ -123,45 +121,78 @@ func HeapSort(data sort.Interface) {
 ```
 
 优点：
-1. 堆排序是原地排序，不需要额外的空间。
-2. 性能比较稳定，不会因为数据的分布情况而性能下降。
+1. 性能比较稳定，最坏情况下时间复杂度是`2NLogN`。
 
-## 不基于排序的算法
+缺点：
+1. 系统缓存命中率低。因为一个元素很少和相邻元素比较。
+
+## 不基于比较的算法
 
 ### 概览
 
-### counting sort（基数排序）
+### counting sort（计数排序）
+
+算法描述：通过计算每个元素的出现次数，然后根据元素的出现次数来进行排序。
 
 ```golang
-func countingSort(arr []int) []int {
-    max := arr[0]
-    for _, v := range arr {
-        if v > max {
-            max = v
-        }
+func CountingSort(data []int, k int) []int {
+    c := make([]int, k+1)
+    for i := 0; i < len(data); i++ {
+        c[data[i]]++
     }
-    count := make([]int, max+1)
-    for _, v := range arr {
-        count[v]++
+    for i := 1; i <= k; i++ {
+        c[i] += c[i-1]
     }
-    for i := 1; i < len(count); i++ {
-        count[i] += count[i-1]
-    }
-    res := make([]int, len(arr))
-    for i := len(arr) - 1; i >= 0; i-- {
-        res[count[arr[i]]-1] = arr[i]
-        count[arr[i]]--
+    res := make([]int, len(data))
+    for i := len(data) - 1; i >= 0; i-- {
+        res[c[data[i]]-1] = data[i]
+        c[data[i]]--
     }
     return res
-} 
+}
 ```
 
 ### bucket sort（桶排序）
 
+算法描述：将元素分布到不同的桶中，然后对每个桶中的元素进行排序，最后将所有桶中的元素合并。
+
+```golang
+func chooseBucket(data float64, n int) int {
+	return int(math.Floor(data * float64(n)))
+}
+
+// data的元素都在[0, 1)区间。如果是其他区间，可以通过线性变换将其映射到[0, 1)区间。
+func BucketSort(data []float64) {
+	// 先分成与长度相同的bucket，每个bucket上挂一个list
+	bucketCount := len(data)
+	if bucketCount <= 1 {
+		return
+	}
+	buckets := make([][]float64, bucketCount)
+	for _, item := range data {
+		bucketIndex := chooseBucket(item, bucketCount)
+		buckets[bucketIndex] = append(buckets[bucketIndex], item)
+	}
+	// sort & merge
+	cur := 0
+	for _, bucket := range buckets {
+		InsertionSort(sort.Float64Slice(bucket))
+		for _, item := range bucket {
+			data[cur] = item
+			cur++
+		}
+	}
+}
+```
+
 ## 现实世界中的排序算法
 
+以Golang 1.22使用的pdqsort算法为例，优先使用quick sort，性能不佳时，切换到heap sort；当子数组太小（<=12）时，切换到insertion sort。
+
+具体代码见Golang标准库`sort.Sort()`的实现。
 
 ## 参考
 
-1. introduction to algorithm
-2. pdq
+1. [Introduction to Algorithms 4th](https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf)
+2. [Pattern-defeating Quicksort](https://arxiv.org/pdf/2106.05123.pdf)
+3. [打造 Go 语言最快的排序算法](https://blog.csdn.net/ByteDanceTech/article/details/124464192)
