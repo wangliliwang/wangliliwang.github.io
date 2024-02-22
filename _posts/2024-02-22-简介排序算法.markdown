@@ -1,0 +1,167 @@
+---
+layout: post
+title:  "简介排序算法"
+date:   2024-02-22 12:33:49 +0800
+categories: Computer-Science
+tags: ["Algorithm", "Golang", "Binary Tree"]
+toc: true
+language: english
+sidebar: true
+author: Wang Li
+---
+
+排序算法是计算机算法领域最基础的算法，用途非常广泛。本文介绍了排序算法的性质、常见排序算法理论及其实现、现实世界的排序算法。
+
+## 排序算法的性质
+
+todo(wangli) 核对
+
+| 算法             | 适用场合             | 平均时间复杂度             | 最坏时间复杂度  | 空间复杂度                 | 是否稳定 | 是否是原地排序 |
+|----------------|------------------|---------------------|----------|-----------------------|------|---------|
+| insertion sort | 通用               | `O(N^2)`            | `O(N^2)` | `O(1)`                | 是    | 是       |
+| quick sort     | 通用               | `O(NLogN)`          |    `O(N^2)`      | `O(LogN)`             | 否    | 是       |
+| heap sort      | 通用               | `O(NLogN)`          |     `O(N^2)`     | `O(1)`                | 否    | 是         |
+| counting sort  | 适用于元素分布情况很大      | `O(N+M)` 其中M为元素取值跨度 |    `O(N+M)`     | `O(M + N)`  | 是    |    是     |
+| bucket sort    | 元素取值范围不大且分布均匀的情况 | `O(N)`              | `O(N^2)` | `O(N)`                |   是    |    是     |
+
+## 基于比较的算法
+
+基于比较的排序算法是指通过比较元素的大小来进行排序的算法。这类算法的时间复杂度的下界是`O(NLogN)`。
+
+### insertion sort（插入排序）
+
+算法描述：类似于玩扑克牌起牌时，每次从未排序的牌中取出一张牌，然后插入到手中已排序的牌中。
+
+golang实现：
+```golang
+func InsertionSort(data sort.Interface) {
+	l := data.Len()
+	for i := 1; i <= l-1; i++ {
+		for j := i; j > 0 && data.Less(j, j-1); j-- {
+			data.Swap(j, j-1)
+		}
+	}
+}
+```
+
+优点：
+1. 性能比选择排序好（比较次数占优，交换次数占劣势）。且在小数组时因为没有递归开销较快速排序好。所以在小数组时，一般会选择插入排序。
+
+### quick sort（快速排序）
+
+算法描述：每次迭代选择一个元素，使用这个元素对数组进行分割，使得左边的元素都小于这个元素，右边的元素都大于这个元素。然后对左右两边的数组进行递归调用。
+
+golang实现：
+```golang
+func partition(data sort.Interface, lo, hi int) int {
+    i, j := lo+1, hi
+    for i <= j {
+        if data.Less(lo, i) {
+            data.Swap(i, j)
+            j--
+        } else {
+            i++
+        }
+    }
+    data.Swap(lo, j)
+    return j
+}
+
+func quickSort(data sort.Interface, lo, hi int) {
+    if lo >= hi {
+        return
+    }
+    pivot := partition(data, lo, hi)
+    quickSort(data, lo, pivot-1)
+    quickSort(data, pivot+1, hi)
+}
+
+
+func QuickSort(data sort.Interface) {
+    quickSort(data, 0, data.Len()-1)
+}
+```
+
+优点：
+1. 平均时间复杂度的常数项为1.39，比较低，性能好。
+
+缺点及改进：
+1. 数组已经是正序、逆序时，时间复杂度达到最坏情况`O(N^2)`，可以通过随机选择pivot来改进。
+2. 有大量重复元素时，性能降低，可以通过三向切分来改进。
+3. 小数组时，递归调用的开销较大，可以使用插入排序来改进。
+
+### heap sort（堆排序）
+
+算法描述：将待排序的序列构造成一个大顶堆。此时，整个序列的最大值就是堆顶的根节点。将它移走（其实就是将它与堆数组的末尾元素交换，此时末尾元素就是最大值），然后将剩余的n-1个序列重新构造成一个堆，这样就会得到n个元素中的次大值。如此反复执行，便能得到一个有序序列了。
+
+golang实现：
+```golang 
+func sink(data sort.Interface, k, end int) {
+	for 2*k+1 <= end {
+		j := 2*k + 1
+		if j < end && data.Less(j, j+1) {
+			j++
+		}
+		if !data.Less(k, j) {
+			break
+		}
+		data.Swap(k, j)
+		k = j
+	}
+}
+
+func HeapSort(data sort.Interface) {
+	l := data.Len()
+	for k := l / 2; k >= 0; k-- {
+		sink(data, k, l-1)
+	}
+	for i := l - 1; i > 0; i-- {
+		data.Swap(0, i)
+		sink(data, 0, i-1)
+	}
+}
+```
+
+优点：
+1. 堆排序是原地排序，不需要额外的空间。
+2. 性能比较稳定，不会因为数据的分布情况而性能下降。
+
+## 不基于排序的算法
+
+### 概览
+
+### counting sort（基数排序）
+
+```golang
+func countingSort(arr []int) []int {
+    max := arr[0]
+    for _, v := range arr {
+        if v > max {
+            max = v
+        }
+    }
+    count := make([]int, max+1)
+    for _, v := range arr {
+        count[v]++
+    }
+    for i := 1; i < len(count); i++ {
+        count[i] += count[i-1]
+    }
+    res := make([]int, len(arr))
+    for i := len(arr) - 1; i >= 0; i-- {
+        res[count[arr[i]]-1] = arr[i]
+        count[arr[i]]--
+    }
+    return res
+} 
+```
+
+### bucket sort（桶排序）
+
+## 现实世界中的排序算法
+
+
+## 参考
+
+1. introduction to algorithm
+2. pdq
