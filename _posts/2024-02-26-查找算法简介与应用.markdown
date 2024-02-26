@@ -1,0 +1,125 @@
+---
+layout: post
+title:  "查找算法简介与应用"
+date:   2024-02-26 19:33:49 +0800
+categories: Computer-Science
+tags: ["Algorithm", "Golang", "Find"]
+toc: true
+language: chinese
+sidebar: true
+author: Wang Li
+---
+
+本文介绍几种常用的查找算法及其常见应用。
+
+| 算法          | 是否有序 | 查找                         | 插入                    | 删除        | 
+|-------------|------|----------------------------|-----------------------|-----------|
+| 二分查找       | 有序   | `O(LogN)`                  | `O(N)`                | `O(N)`    | 
+| 二叉查找树     | 有序   | 平均 `O(LogN)`<br/>最坏 `O(N)` | 平均 `O(LogN)`<br/>最坏 `O(N)` | 平均 `O(LogN)`<br/>最坏 `O(N)` |
+| 红黑树、AVL树   | 有序   | `O(LogN)`                  | `O(LogN)`             | `O(LogN)` |
+| 替罪羊树       | 有序   | `O(LogN)`              | 平均 `O(LogN)`<br/>最坏 `O(N)`        | 平均 `O(LogN)`<br/>最坏 `O(N)` |
+| B树（M为子节点数量限制）| 有序   | `O(Log(M)N)`           | `O(Log(M)N)`               | `O(Log(M)N)` |
+| 哈希表       | 无序   | `O(1)`                 | `O(1)`                  | `O(1)`    |
+
+
+## 二分查找法
+
+算法描述：二分查找法是一种在有序数组中查找元素的算法。每次查找时，都将数组分成两半，然后判断要查找的元素在左半部分还是右半部分，然后去对应的部分查找。
+
+二分查找法的主要缺点是：插入、删除元素需要移动大量的元素，时间复杂度是`O(N)`。
+
+Golang标准库的二分查找实现如下：
+```golang
+// /src/sort/search.go
+func Search(n int, f func(int) bool) int {
+	// Define f(-1) == false and f(n) == true.
+	// Invariant: f(i-1) == false, f(j) == true.
+	i, j := 0, n
+	for i < j {
+		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+		// i ≤ h < j
+		if !f(h) {
+			i = h + 1 // preserves f(i-1) == false
+		} else {
+			j = h // preserves f(j) == true
+		}
+	}
+	// i == j, f(i-1) == false, and f(j) (= f(i)) == true  =>  answer is i.
+	return i
+}
+```
+
+使用上述函数在有序数组中查找元素的示例：
+```golang
+func BinarySearch(data []IntComparable, target IntComparable) (index int, ok bool) {
+    l := len(data)
+    result := Search(l, func(i int) bool {
+    compareResult := data[i].Compare(target)
+        return compareResult == 1 || compareResult == 0
+    })
+	return result, result < l && data[result].Compare(target) == 0
+}
+```
+
+## 基于树的查找算法
+
+<img class="middle-image" src="/assets/image/20240226-find/binary_search_tree.png" />
+
+算法描述：树结构结合了数组和链表的优点，每个树节点的元素都>=左树的节点，并<=右树的节点。常见的基于树的查找算法有二叉查找树、红黑树、B树、B+树等。
+
+树的查找时间复杂度取决于树高。对于二叉平衡树，查找时间复杂度为`O(LogN)`；对于非平衡树，查找时间复杂度最坏为`O(N)`。
+
+其中平衡树的定义如下：
+1. 左右子树高度差<=1
+2. 左右子树都是平衡树
+
+### 二叉查找树
+
+二叉查找树不考虑树的平衡性。所以在最坏情况下，也就是所有的元素都在一边的子树上，二叉查找树的查找时间复杂度为`O(N)`。 为了解决这个问题，人们提出了红黑树、AVL树等平衡二叉查找树。
+
+### Red-Black Tree（红黑树）
+
+红黑树的节点比二叉查找树多了颜色属性，可以是红色或黑色。通过插入、删除时的旋转和颜色变换来确保从root节点到叶子节点的最长路径不多于最短路径的两倍。
+
+红黑树并不是平衡树，只是接近于平衡。
+
+<img class="middle-image" src="/assets/image/20240226-find/red_black_tree.png" />
+
+### AVL Tree
+
+AVL树是一种平衡二叉查找树。每个节点记录了此子树的高度，每次插入、删除节点后，都会检查树的平衡性，如果不平衡，则通过旋转来保持树的平衡。
+
+AVL树是严格平衡的，插入、删除时比红黑树多了一些额外的旋转操作，插入、删除操作性能比红黑树差，但是查询性能比红黑树好。
+
+AVL树的名字是以发明者的名字命名的：Adelson-Velsky和Landis。
+
+<img class="middle-image" src="/assets/image/20240226-find/avl_tree.gif" />
+
+### Scapegoat Tree（替罪羊树）
+
+替罪羊树是一种平衡二叉查找树。替罪羊树的特点是：当插入、删除节点后，如果子树失衡即满足`max(Left, Right) > alpha * Total`（`alpha`一般取0.7），则将子树使用重构操作变成一个平衡二叉查找树。
+
+替罪羊树采用了和其他平衡树不同的策略，也就是少次执行重构操作，但是每次重构操作的代价比较大。执行重构操作所在的节点，被称为替罪羊节点。
+
+### B Tree, B+ Tree
+
+B树是一种多路搜索树。B树的特点是：每个节点有多个子节点，这样树高更小，查找效率更高。
+
+## 基于哈希表的查找算法
+
+算法原理：哈希表是一种以键值对存储数据的数据结构。底层使用数组存储，通过哈希函数将键映射到数组的索引上。由于可以高效使用数组的索引操作，哈希表的查找、插入、删除操作的时间复杂度都是`O(1)`。
+
+设计哈希表的问题与考虑要点：
+1. 哈希函数：需要确保一致性、均匀性、高效性
+2. 冲突的处理：有拉链法、开放寻址法等方法
+3. 动态扩容：当哈希表的负载因子（load factor）超过某个阈值时，进行扩容
+
+## 查找算法的实际应用
+
+### Golang的map
+
+Golang的map是一种基于哈希表的无序数据结构。使用拉链法解决冲突。当负载因子达到阈值时，会进行渐进式扩容，以保证哈希表的性能。
+
+## 参考
+
+1. [Introduction to Algorithms 4th](https://dl.ebooksworld.ir/books/Introduction.to.Algorithms.4th.Leiserson.Stein.Rivest.Cormen.MIT.Press.9780262046305.EBooksWorld.ir.pdf)
