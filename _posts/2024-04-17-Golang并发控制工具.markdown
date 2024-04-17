@@ -1,0 +1,61 @@
+---
+layout: post
+title:  "Golang并发控制工具"
+date:   2024-04-17 17:07:49 +0800
+categories: Computer-Science
+tags: ["Concurrent", "Golang", "sync"]
+toc: true
+language: chinese
+sidebar: true
+author: Wang Li
+---
+
+Golang通过`go`关键词提供方便地启动协程的机制。同时提供了`context`、`sync`、`x/sync`包，管理这些启动起来的协程。本文介绍三个包的内容。
+
+## context
+
+这个通过cancel函数提供手动退出机制，通过timeout/deadline提供基于超时的退出机制。使用例子如下：
+
+### 函数解析
+
+### 示例
+
+```go
+import (
+	"context"
+	"fmt"
+	"sync"
+	"time"
+)
+
+func contextWorker(ctx context.Context, wg *sync.WaitGroup) error {
+	defer wg.Done()
+	for i := 0; i < 1000; i++ {
+		select {
+		case <-time.After(2 * time.Second):
+			fmt.Println("do work!")
+		case <-ctx.Done():
+			fmt.Println("receive done!")
+			return ctx.Err()
+		}
+	}
+	return nil
+}
+
+func ContextDispatcher() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*4)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		fmt.Println("return err: ", contextWorker(ctx, wg))
+	}()
+
+	wg.Wait()
+}
+```
+
+## sync
+
+## x/sync
+
+## 参考
