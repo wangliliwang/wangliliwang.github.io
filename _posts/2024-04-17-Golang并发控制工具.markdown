@@ -540,7 +540,7 @@ read value: 1713869936895817000
 
 ## 参考
 
-1. [https://go.dev/blog/pipelines](Go Concurrency Patterns: Pipelines and cancellation)
-2. [https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sync-primitives/](同步原语与锁)
-3. [https://www.lixueduan.com/posts/go/singleflight/](Go语言之防缓存击穿利器Singleflight)
-4. [https://geektutu.com/post/hpg-mutex.html](读写锁和互斥锁的性能比较)
+1. [Go Concurrency Patterns: Pipelines and cancellation](https://go.dev/blog/pipelines)
+2. [同步原语与锁](https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sync-primitives/)
+3. [Go语言之防缓存击穿利器Singleflight](https://www.lixueduan.com/posts/go/singleflight/)
+4. [读写锁和互斥锁的性能比较](https://geektutu.com/post/hpg-mutex.html)
