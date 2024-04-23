@@ -10,15 +10,42 @@ sidebar: true
 author: Wang Li
 ---
 
-Golang通过`go`关键词提供方便地启动协程的机制。同时提供了`context`、`sync`、`x/sync`包，管理这些启动起来的协程。本文介绍三个包的内容。
+Golang通过`go`关键词方便地启动协程。同时提供了`context`、`sync`、`x/sync`包，管理这些协程。本文介绍这三个包的使用方法。
 
 ## context
 
-这个通过cancel函数提供手动退出机制，通过timeout/deadline提供基于超时的退出机制。使用例子如下：
+功能：
+1. 通过`cancel`函数提供手动退出机制
+2. 通过`timeout`/`deadline`提供基于超时的退出机制
+3. 退出信号会在`context`中从父向子传播
 
 ### 函数解析
 
+`context.WithCancel`函数会返回`cancel`函数。调用`cancel`时，`ctx.Done()`这个`channel`会收到消息。
+同时，`ctx.Err()`会返回为什么会收到`Done`信号，可能取值是`Canceled`或`DeadlineExceeded`。
+
+```go
+ctx, cancel := context.WithCancel(context.Background())
+
+// call cancel
+cancel()
+
+// receive cancel signal
+<- ctx.Done()
+
+// get why receive done signal
+ctx.Err()
+```
+
+`context.WithTimeout`/`context.WithDeadline`与`context.WithCancel`的区别是，前两者会在超时的时候向`ctx.Done()`发信息。
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+```
+
 ### 示例
+
+这个示例中，`ContextDispatcher`是程序入口，启动了`contextWorker`这个goroutine，`ctx.Done()`会在4s时接受到信号，从而退出`contextWorker`。
 
 ```go
 import (
@@ -54,8 +81,466 @@ func ContextDispatcher() {
 }
 ```
 
-## sync
+运行输出：
+```text
+do work!
+do work!
+receive done!
+return err:  context deadline exceeded
+```
 
-## x/sync
+## sync.Once
+
+功能：保证并发程序中的一段代码只会执行一次
+
+### 函数解析
+
+`once.Do(f)`确保`f`只会被最早的goroutine执行一次，其他goroutine执行到这段代码时会等待第一次执行返回再往下执行。
+
+```go
+once := new(sync.Once)
+
+once.Do(func () {
+  // do something
+})
+```
+
+### 示例
+
+```go
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+func RunOnceExample() {
+	once := new(sync.Once)
+	wg := new(sync.WaitGroup)
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go onceWorker(once, wg)
+	}
+	wg.Wait()
+}
+
+func initResource() {
+	fmt.Println("init start...")
+	time.Sleep(2 * time.Second)
+	fmt.Println("init done!")
+}
+
+func onceWorker(once *sync.Once, wg *sync.WaitGroup) {
+	defer wg.Done()
+	once.Do(func() {
+		initResource()
+	})
+	fmt.Println("get something done!")
+}
+```
+
+运行输出：
+```text
+init start...
+init done!
+get something done!
+get something done!
+get something done!
+```
+
+同时有3个gourotine调用了f函数，最终只运行了一次，且`once.Do`之后的代码是在f执行完毕后执行的。
+
+## sync.WaitGroup
+
+功能：为发起goroutine的主函数提供等待这些goroutine返回的机制。
+
+### 函数解析
+
+`wg.Add`设置了需要等待多少个goroutine；每个goroutine返回时调用`wg.Done()`；`wg.Wait()`会一直阻塞，直到全部goroutine都返回。
+
+```go
+wg := new(sync.WaitGroup)
+	
+wg.Add(1)
+
+wg.Done()
+
+wg.Wait()
+```
+
+### 示例
+
+参见`sync.Once`中的例子。
+
+## sync.Cond
+
+功能：提供唤醒一个或一群goroutine的机制。
+
+不过如果需要唤醒一群goroutine，可以使用`close(chan)`机制，比这个简单不少。
+
+### 函数解析
+
+`NewCond`是构造函数，需要传入一个锁。
+```go
+func NewCond(l Locker) *Cond
+```
+
+`Wait`函数阻塞调用者，直到被`Signal`或`Broadcast`唤醒。
+```go
+Wait()
+```
+
+`Signal`唤醒一个`Wait`状态的goroutine。
+```go
+Signal()
+```
+
+`Broadcast`唤醒所有`Wait`状态的goroutine。
+```go
+Broadcast()
+```
+
+### 示例
+
+`CondReader`会阻塞在`Wait`处，直到`CondWriter`使用`Broadcast`将他们都唤醒。
+
+```go
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+var CondDone = false
+
+func CondWriter(name string, wg *sync.WaitGroup, c *sync.Cond) {
+	defer wg.Done()
+	fmt.Printf("[%s] starting writing...\n", name)
+	time.Sleep(time.Second)
+	c.L.Lock()
+	CondDone = true
+	c.L.Unlock()
+	fmt.Printf("[%s] wakes all...\n", name)
+	c.Broadcast()
+}
+
+func CondReader(name string, wg *sync.WaitGroup, c *sync.Cond) {
+	defer wg.Done()
+	c.L.Lock()
+	for !CondDone {
+		c.Wait()
+	}
+	fmt.Printf("[%s] starting reading...\n", name)
+	time.Sleep(100 * time.Millisecond)
+	c.L.Unlock()
+}
+
+func RunCondExample() {
+	c := sync.NewCond(&sync.Mutex{})
+	wg := new(sync.WaitGroup)
+
+	wg.Add(4)
+	go CondReader("reader1", wg, c)
+	go CondReader("reader2", wg, c)
+	go CondReader("reader3", wg, c)
+	go CondWriter("writer", wg, c)
+	wg.Wait()
+}
+```
+
+运行输出：
+```text
+[writer] starting writing...
+[writer] wakes all...
+[reader2] starting reading...
+[reader3] starting reading...
+[reader1] starting reading...
+```
+
+## x/sync/errgroup
+
+`errgroup`类似于`sync.WaitGroup`，同时额外提供了如下功能：
+1. 避免了手动Add、Done的麻烦和错误
+2. 提供基于context的取消机制
+3. 增加返回错误；且一个goroutine返回错误时，可以通过ctx.Done机制通知其他goroutine退出
+4. 提供限制goroutine数量的机制
+
+### 函数解析
+
+`errgroup.WithContext`函数，返回一个`Group`实例，和带有`cancel`函数的`context`。
+当一个goroutine函数返回错误时，会调用`cancel`；其他goroutine可以使用`ctx.Done()`接收信号。
+
+```go
+eg, ctx := errgroup.WithContext(context.Background())
+```
+
+`SetLimit`函数设置`Group`中能运行的最大goroutine的数量。默认没有数量限制。
+
+```go
+eg.SetLimit(10)
+```
+
+`Go`和`TryGo`函数会启动新的goroutine。不同的是，前者在超过数量限制时，阻塞；后者不阻塞，直接返回是否启动了goroutine。
+
+```go
+eg.Go(func() error {
+    // do something
+})
+
+started := eg.TryGo(func() error {
+    // do something
+})
+```
+
+`Wait`函数会阻塞直到所有的goroutine都返回，并且会返回goroutine产生的错误。此处返回的是第一个错误。
+
+```go
+err := eg.Wait()
+```
+
+### 示例
+
+```go
+import (
+	"context"
+	"errors"
+	"fmt"
+	"golang.org/x/sync/errgroup"
+	"time"
+)
+
+func errorGroupWorker(ctx context.Context, ch chan int) error {
+	for item := range ch {
+		select {
+		case <-ctx.Done():
+			break
+		default:
+			if item == 10 {
+				return errors.New("encounter 10")
+			}
+			fmt.Println(item)
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+	return nil
+}
+
+func errorGroupDispatcher(ctx context.Context, ch chan int) error {
+	for i := 0; i < 100; i++ {
+		select {
+		case <-ctx.Done():
+			break
+		default:
+			ch <- i
+		}
+	}
+	close(ch)
+	return nil
+}
+
+func RunErrorGroupExample() {
+	eg, ctx := errgroup.WithContext(context.Background())
+	ch := make(chan int)
+	eg.Go(func() error {
+		return errorGroupDispatcher(ctx, ch)
+	})
+	for i := 0; i < 3; i++ {
+		eg.Go(func() error {
+			return errorGroupWorker(ctx, ch)
+		})
+	}
+	err := eg.Wait()
+	if err != nil {
+		fmt.Println("eg err: ", err)
+	}
+}
+```
+
+某一个goroutine在接收到10时返回错误；另外的goroutine通过`ctx.Done`接收到信号后也直接返回，所以只打印到了10左右。
+
+运行输出：
+```text
+1
+0
+2
+5
+3
+4
+6
+8
+7
+9
+11
+eg err:  encounter 10
+```
+
+## x/sync/semaphore
+
+功能：提供了基于整数（资源）权重的信号量实现。
+
+### 函数解析
+
+`NewWeighted`是构造函数，需要传入资源数量。
+
+```go
+s := semaphore.NewWeighted(10)
+```
+
+`Acquire`函数尝试获取一定数量的资源，没有获取到前会一直阻塞。当通过`ctx`接收到取消信号时，会立马返回取消错误。
+```go
+err := s.Acquire(ctx, 1)
+```
+
+`TryAcquire`函数尝试获取一定数量的资源，不会阻塞，会立马返回是否获取到了资源。且不会处理`ctx`的退出信号。
+```go
+success := s.TryAcquire(ctx, 1)
+```
+
+`Release`函数用来释放资源。
+```go
+s.Release(1)
+```
+
+### 示例
+
+下面的例子，将启动的worker的数量限制为CPU核数。
+
+```go
+import (
+	"context"
+	"fmt"
+	"golang.org/x/sync/semaphore"
+	"runtime"
+	"time"
+)
+
+func RunSemaphoreExample() {
+	maxWorkers := int64(runtime.GOMAXPROCS(0))
+	s := semaphore.NewWeighted(maxWorkers)
+	ctx := context.Background()
+	// 最多只启动这么多数量的worker
+	for i := 0; i < 32; i++ {
+		if err := s.Acquire(ctx, 1); err != nil {
+			fmt.Println("acquire semo failed")
+			break
+		}
+
+		go func(i int) {
+			defer s.Release(1)
+			semaphoreWorker(i)
+		}(i)
+	}
+	if err := s.Acquire(ctx, maxWorkers); err != nil {
+		fmt.Println("acquire semo failed")
+	}
+}
+
+func semaphoreWorker(no int) {
+	time.Sleep(500 * time.Millisecond)
+	fmt.Println(no)
+}
+```
+
+## x/sync/singleflight
+
+功能：提供防止重复调用的机制，保证同一时间只有一个goroutine在运行某段代码。
+
+与`Once`不同的是：`Once`保证某一段代码在进程的全生命周期内只会执行一次；而`singleflight`保证的是对于同一个key、同一个时间内，某一段代码只会执行一次，并且提供了可执行多次的forget机制。
+
+### 函数解析
+
+`Go`函数执行一段代码。并且保证对于相同的key，同一时间只有一个goroutine会实际执行这段代码，其他调用者会阻塞直到`fn`返回，且会拿到相同的返回值。
+
+第三个返回值`shared`表示返回值有没有被分享给其他调用者。
+
+```go
+func (g *Group) Do(key string, fn func() (interface{}, error)) (v interface{}, err error, shared bool)
+```
+
+`DoChan`是`Do`的非阻塞版本。通过`chan`接收返回结果。
+```go
+func DoChan(key string, fn func() (interface{}, error)) <-chan Result
+```
+
+`Forget`函数被调用后，对于相同的key可以执行函数调用，而不是等待第一个调用者返回。
+```go
+func Forget(key string)
+```
+
+### 示例
+
+这个例子提供了一种防止缓存穿透的方法。
+
+```go
+import (
+	"errors"
+	"fmt"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/singleflight"
+	"time"
+)
+
+func RunSingleFlightExample() {
+	g := new(singleflight.Group)
+	eg := new(errgroup.Group)
+	for i := 0; i < 10; i++ {
+		eg.Go(func() error {
+			value, _ := loadKey(g, "wocao")
+			fmt.Printf("read value: %s\n", value)
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		fmt.Println("eg err: ", err)
+	}
+}
+
+func loadKey(g *singleflight.Group, key string) (string, error) {
+	value, err := loadFromCache()
+	if err != nil {
+		// 下面的逻辑，同时只有一个在执行
+		v, _, _ := g.Do(key, func() (interface{}, error) {
+			return queryDB(key), nil
+		})
+		value = v.(string)
+		setCache(key, value)
+	}
+	return value, nil
+}
+
+func loadFromCache() (string, error) {
+	return "", errors.New("not found")
+}
+
+func setCache(key, value string) {
+
+}
+
+func queryDB(key string) string {
+	time.Sleep(time.Second)
+	fmt.Println("query db")
+	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+```
+
+运行输出如下，10个并发请求只调用了一次DB。
+```go
+query db
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+read value: 1713869936895817000
+```
 
 ## 参考
+
+1. [https://go.dev/blog/pipelines](Go Concurrency Patterns: Pipelines and cancellation)
+2. [https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sync-primitives/](同步原语与锁)
+3. [https://www.lixueduan.com/posts/go/singleflight/](Go语言之防缓存击穿利器Singleflight)
+4. [https://geektutu.com/post/hpg-mutex.html](读写锁和互斥锁的性能比较)
