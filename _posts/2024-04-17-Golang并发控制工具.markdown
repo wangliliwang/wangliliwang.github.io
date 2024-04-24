@@ -12,6 +12,8 @@ author: Wang Li
 
 Golang通过`go`关键词方便地启动协程。同时提供了`context`、`sync`、`x/sync`包，管理这些协程。本文介绍这三个包的使用方法。
 
+其中`sync.Mutex`和`sync.RWMutex`的使用太简单，此处不做说明。
+
 ## context
 
 功能：
